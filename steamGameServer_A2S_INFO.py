@@ -185,5 +185,5 @@ for t in threads:
 
 # Print server information
 for serverInfo in a2sInfoArray:
-    if ((not(onlyActive) or serverInfo.numPlayers > 0) and (not(onlyEmpty) or serverInfo.numPlayers == 0)): 
+    if ((not(onlyActive) or serverInfo.numPlayers > 0) and (not(onlyEmpty) or serverInfo.numPlayers <= 0)): 
         print(serverInfo)
