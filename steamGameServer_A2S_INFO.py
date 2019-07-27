@@ -50,6 +50,7 @@ for ipPort in IP_PORT:
     try:
         ipPortSplit = ipPort.split(":")
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.settimeout(0.5)
         sock.sendto(A2S_INFO, (ipPortSplit[0], int(ipPortSplit[1])))
         data, addr = sock.recvfrom(1024)
         sock.close
