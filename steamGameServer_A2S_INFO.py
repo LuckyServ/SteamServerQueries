@@ -2,7 +2,18 @@
 #
 # Python script to make A2S_INFO queries to steam game servers.
 #
-# Arguments: -v for verbose output
+# It reads the server list to query from stdin, each line has to be ip:port.
+#
+# Example input file:
+#
+# 192.223.24.83:27015
+# 192.223.30.176:27015
+# 140.82.26.135:27015
+#
+# Arguments: 
+#    -v for verbose output
+#    -a for only active servers
+#    -e for only empty servers
 #
 # Author: Luckylock
 #
@@ -12,13 +23,7 @@
 import socket
 import sys
 import binascii
-
-# List of servers to query
-IP_PORT = ([
-    "192.223.24.83:27015", 
-    "192.223.30.176:27015", 
-    "140.82.26.135:27015",
-])
+import threading
 
 # Formatting
 LINE_SEP = "----------------------------------------"
@@ -28,106 +33,119 @@ LJUST_VALUE = 11
 # A2S_INFO values from Valve documentation
 A2S_INFO = binascii.unhexlify("FFFFFFFF54536F7572636520456E67696E6520517565727900")
 A2S_INFO_START_INDEX = 6
-A2S_INFO_STRING_ARRAY = ( 
-    ["Name", "Map", "Folder", "Game"]
-)
 
 STEAM_PACKET_SIZE = 1400
 TIMEOUT = 0.5
 
-# Prints a string from the UDP packet recieved by the steam server.
-#
-# @param infoName the info name of the string
-# @param data the udp packet bytearray data
-# @param i start index of the string
-# @return start index of the next info
-def printInfo(infoName, data, i):
-    strFromBytes = ""
+isFirstLine = True
 
-    # Assemble string until null byte is found
-    while data[i] != 0:
-        strFromBytes = strFromBytes + chr(data[i])
-        i = i + 1
+# Arguments handling
+allArgs = ""
+for i in range(1, len(sys.argv)):
+    allArgs = allArgs + sys.argv[1]
+isVerbose = "v" in allArgs
+onlyActive = "a" in allArgs
+onlyEmpty = "e" in allArgs
 
-    # Print the string value
-    if not(not(isVerbose) and (infoName == "Folder" or infoName == "Game")):
-        print(infoName.ljust(LJUST_VALUE) + FIELD_SEP + strFromBytes)
-    i = i + 1
+class ValveA2SInfo:
+    def __init__(self, strServerIpPort): 
 
-    return i
+        # Initialise
+        self.strServerIpPort = strServerIpPort
+        self.dataIndex = A2S_INFO_START_INDEX
+        self.strServerName = ""
+        self.strMapName = ""
+        self.strFolder = ""
+        self.strGame = ""
+        self.numPlayers = -1
+        self.numId = -1
+        self.numMaxPlayers = -1
+        self.numBots = -1
+        self.strServerType = ""
+        self.strEnvironment = ""
+        self.strVisibility = ""
+        self.strVAC = ""
+        self.connect = False
 
-isVerbose = len(sys.argv) >= 2 and sys.argv[1] == "-v"
+    def getMembers(self):
+        # Send A2S_INFO request and get response from steam game server
+        try:
+            ipPortSplit = self.strServerIpPort.split(":")
 
-print(LINE_SEP)
+            # Prep socket for UDP
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-# Iterate over all IP addresses to print their A2S_INFO values
-for ipPort in IP_PORT:
-    print("Server".ljust(LJUST_VALUE) + FIELD_SEP + ipPort)
+            # Don't wait forever for a response
+            sock.settimeout(TIMEOUT)
 
-    # Send A2S_INFO request and get response from steam game server
-    try:
-        ipPortSplit = ipPort.split(":")
+            # Send steam game server request
+            sock.sendto(A2S_INFO, (ipPortSplit[0], int(ipPortSplit[1])))
 
-        # Prep socket for UDP
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            # Get answer from server
+            rawData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
 
-        # Don't wait forever for a response
-        sock.settimeout(TIMEOUT)
+            # Done
+            sock.close
+            self.data = bytearray(rawData)
+            self.getStrings()
+            self.getNumericValues()
+            self.connect = True
+        except:
+            self.connect = False
 
-        # Send steam game server request
-        sock.sendto(A2S_INFO, (ipPortSplit[0], int(ipPortSplit[1])))
+    def getStrings(self):
+        self.strServerName = self.getString()
+        self.strMapName = self.getString()
+        self.strFolder = self.getString()
+        self.strGame = self.getString()
 
-        # Get answer from server
-        data, addr = sock.recvfrom(STEAM_PACKET_SIZE)
+    def getString(self):
+        strFromBytes = ""
 
-        # Done
-        sock.close
-    except:
-        print(" " * LJUST_VALUE + "   CONNECTION FAILED")
-        print(LINE_SEP)
-        continue
+        # Assemble string until null byte is found
+        while self.data[self.dataIndex] != 0:
+            strFromBytes = strFromBytes + chr(self.data[self.dataIndex])
+            self.dataIndex = self.dataIndex + 1
 
-    data = bytearray(data)
+        self.dataIndex = self.dataIndex + 1
+        return strFromBytes
 
-    # Print strings
-    i = A2S_INFO_START_INDEX
-    for infoName in A2S_INFO_STRING_ARRAY:
-        i = printInfo(infoName, data, i)
+    def getNumericValues(self):
+        i = self.dataIndex
+        data = self.data
+        self.numId = (data[i]) + (data[i+1] << 8)
+        self.numPlayers = data[i+2]
+        self.numMaxPlayers = data[i+3]
+        self.numBots = data[i+4]
+        self.strServerType = "dedicated server" if chr(data[i+5]) == 'd' else "non-dedicated server" if chr(data[i+5]) == 'l' else "SourceTV relay (proxy)"
+        self.strEnvironment = "Linux" if chr(data[i+6]) == 'l' else "Windows" if chr(data[i+6]) == 'w' else "Mac"
+        self.strVisibility = "private" if data[i+7] else "public"
+        self.strVAC = "secured" if data[i+8] else "unsecured"
 
-    # Print numeric values
-    print(
-        "Players".ljust(LJUST_VALUE) + FIELD_SEP 
-        + str(data[i+2])
-    )
-
-    if isVerbose: 
-        print(
-            "ID".ljust(LJUST_VALUE) + FIELD_SEP 
-            + str((data[i]) + (data[i+1] << 8))
-        )
-        print(
-            "Max Players".ljust(LJUST_VALUE) + FIELD_SEP 
-            + str(data[i+3])
-        )
-        print(
-            "Bots".ljust(LJUST_VALUE) + FIELD_SEP 
-            + str(data[i+4])
-        )
-        print(
-            "Server type".ljust(LJUST_VALUE) + FIELD_SEP 
-            + ("dedicated server" if chr(data[i+5]) == 'd' else "non-dedicated server" if chr(data[i+5]) == 'l' else "SourceTV relay (proxy)")
-        )
-        print(
-            "Environment".ljust(LJUST_VALUE) + FIELD_SEP 
-            + ("Linux" if chr(data[i+6]) == 'l' else "Windows" if chr(data[i+6]) == 'w' else "Mac")
-        )
-        print(
-            "Visibility".ljust(LJUST_VALUE) + FIELD_SEP 
-            + ("private" if data[i+7] else "public")
-        )
-        print(
-            "VAC".ljust(LJUST_VALUE) + FIELD_SEP 
-            + ("secured" if data[i+8] else "unsecured")
+    def __str__(self):
+        s = (
+            "Server".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerIpPort + "\n" 
+            + "Name".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerName + "\n"
+            + "Map".ljust(LJUST_VALUE) + FIELD_SEP + self.strMapName + "\n"
+            + "Players".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numPlayers) + "\n"
         )
 
-    print(LINE_SEP)
+        if isVerbose:
+            s = s + (
+                "Game".ljust(LJUST_VALUE) + FIELD_SEP + self.strGame + "\n"
+                + "Folder".ljust(LJUST_VALUE) + FIELD_SEP + self.strFolder + "\n"
+                + "ID".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numId) + "\n"
+                + "Max Players".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numMaxPlayers) + "\n"
+                + "Bots".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numBots) + "\n"
+                + "Server type".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerType + "\n"
+                + "Environment".ljust(LJUST_VALUE) + FIELD_SEP + self.strEnvironment + "\n"
+                + "Visibility".ljust(LJUST_VALUE) + FIELD_SEP + self.strVisibility + "\n"
+                + "VAC".ljust(LJUST_VALUE) + FIELD_SEP + self.strVAC + "\n"
+            )
+
+        return s
+
+i = 0
+for ipPort in sys.stdin:
+    a2sInfoArray(i) = ValveA2SInfo(ipPort.strip())
+
