@@ -47,6 +47,11 @@ isVerbose = "v" in allArgs
 onlyActive = "a" in allArgs
 onlyEmpty = "e" in allArgs
 
+if onlyEmpty and onlyActive:
+    print("Option -e (only empty) and -a (only active) can't be used together.", 
+        file=sys.stderr)
+    raise SystemExit
+
 class ValveA2SInfo:
     def __init__(self, strServerIpPort): 
 
