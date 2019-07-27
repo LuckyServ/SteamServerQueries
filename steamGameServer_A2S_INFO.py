@@ -35,7 +35,7 @@ A2S_INFO = binascii.unhexlify("FFFFFFFF54536F7572636520456E67696E652051756572790
 A2S_INFO_START_INDEX = 6
 
 STEAM_PACKET_SIZE = 1400
-TIMEOUT = 0.5
+TIMEOUT = 0.3
 
 isFirstLine = True
 
@@ -117,35 +117,68 @@ class ValveA2SInfo:
         self.numPlayers = data[i+2]
         self.numMaxPlayers = data[i+3]
         self.numBots = data[i+4]
-        self.strServerType = "dedicated server" if chr(data[i+5]) == 'd' else "non-dedicated server" if chr(data[i+5]) == 'l' else "SourceTV relay (proxy)"
-        self.strEnvironment = "Linux" if chr(data[i+6]) == 'l' else "Windows" if chr(data[i+6]) == 'w' else "Mac"
+        self.strServerType = (
+            "dedicated server" if chr(data[i+5]) == 'd' 
+            else "non-dedicated server" if chr(data[i+5]) == 'l' 
+            else "SourceTV relay (proxy)"
+        )
+        self.strEnvironment = (
+            "Linux" if chr(data[i+6]) == 'l' 
+            else "Windows" if chr(data[i+6]) == 'w' 
+            else "Mac"
+        )
         self.strVisibility = "private" if data[i+7] else "public"
         self.strVAC = "secured" if data[i+8] else "unsecured"
 
     def __str__(self):
-        s = (
-            "Server".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerIpPort + "\n" 
-            + "Name".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerName + "\n"
-            + "Map".ljust(LJUST_VALUE) + FIELD_SEP + self.strMapName + "\n"
-            + "Players".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numPlayers) + "\n"
-        )
+        if self.connect:
+            s = (
+                "Server".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerIpPort + "\n" 
+                + "Name".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerName + "\n"
+                + "Map".ljust(LJUST_VALUE) + FIELD_SEP + self.strMapName + "\n"
+                + "Players".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numPlayers) + "\n"
+            )
 
-        if isVerbose:
-            s = s + (
-                "Game".ljust(LJUST_VALUE) + FIELD_SEP + self.strGame + "\n"
-                + "Folder".ljust(LJUST_VALUE) + FIELD_SEP + self.strFolder + "\n"
-                + "ID".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numId) + "\n"
-                + "Max Players".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numMaxPlayers) + "\n"
-                + "Bots".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numBots) + "\n"
-                + "Server type".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerType + "\n"
-                + "Environment".ljust(LJUST_VALUE) + FIELD_SEP + self.strEnvironment + "\n"
-                + "Visibility".ljust(LJUST_VALUE) + FIELD_SEP + self.strVisibility + "\n"
-                + "VAC".ljust(LJUST_VALUE) + FIELD_SEP + self.strVAC + "\n"
+            if isVerbose:
+                s = s + (
+                    "Game".ljust(LJUST_VALUE) + FIELD_SEP + self.strGame + "\n"
+                    + "Folder".ljust(LJUST_VALUE) + FIELD_SEP + self.strFolder + "\n"
+                    + "ID".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numId) + "\n"
+                    + "Max Players".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numMaxPlayers) + "\n"
+                    + "Bots".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numBots) + "\n"
+                    + "Server type".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerType + "\n"
+                    + "Environment".ljust(LJUST_VALUE) + FIELD_SEP + self.strEnvironment + "\n"
+                    + "Visibility".ljust(LJUST_VALUE) + FIELD_SEP + self.strVisibility + "\n"
+                    + "VAC".ljust(LJUST_VALUE) + FIELD_SEP + self.strVAC + "\n"
+                )
+        else:
+            s = (
+                "Server".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerIpPort + "\n"
+                + " " * LJUST_VALUE + "   CONNECTION FAILED" + "\n"
             )
 
         return s
 
-i = 0
-for ipPort in sys.stdin:
-    a2sInfoArray(i) = ValveA2SInfo(ipPort.strip())
+def thread_a2sInfo_getMembers(objA2sInfo):
+    objA2sInfo.getMembers()
 
+# Prepare threads
+i = 0
+a2sInfoArray = []
+threads = []
+for ipPort in sys.stdin:
+    if len(ipPort) < 10 or ipPort[0] == "#": continue
+    a2sInfoArray.append(ValveA2SInfo(ipPort.strip()))
+    threads.append(threading.Thread(target=thread_a2sInfo_getMembers, args=(a2sInfoArray[i],)))
+    i = i + 1
+
+# Launch threads
+for t in threads:
+    t.start()
+for t in threads:
+    t.join()
+
+# Print server information
+for serverInfo in a2sInfoArray:
+    if ((not(onlyActive) or serverInfo.numPlayers > 0) and (not(onlyEmpty) or serverInfo.numPlayers == 0)): 
+        print(serverInfo)
