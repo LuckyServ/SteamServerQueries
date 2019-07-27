@@ -9,8 +9,11 @@
 
 import socket
 
-IP = ["192.223.24.83", "192.223.30.176", "140.82.26.135"]
-PORT = 27015
+IP_PORT = ([
+    "192.223.24.83:27015", 
+    "192.223.30.176:27015", 
+    "140.82.26.135:27015"
+])
 
 LINE_SEP = "----------------------------------------"
 LJUST_VALUE = 11 
@@ -40,13 +43,14 @@ def printInfo(infoName, data, i):
 print(LINE_SEP)
 
 # Iterate over all IP addresses to print their A2S_INFO values
-for ipAdr in IP:
-    print("Server".ljust(LJUST_VALUE) + " : " + ipAdr + ":" + str(PORT))
+for ipPort in IP_PORT:
+    print("Server".ljust(LJUST_VALUE) + " : " + ipPort)
 
     # Send A2S_INFO request and get response from steam game server
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        sock.sendto(A2S_INFO, (ipAdr, PORT))
+        ipPortSplit = ipPort.split(":")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.sendto(A2S_INFO, (ipPortSplit[0], int(ipPortSplit[1])))
         data, addr = sock.recvfrom(1024)
         sock.close
     except:
@@ -56,9 +60,9 @@ for ipAdr in IP:
 
     # Convert data to bytearray 
     data = bytearray(data)
-    i = A2S_INFO_START_INDEX
 
     # Print the strings
+    i = A2S_INFO_START_INDEX
     for infoName in A2S_INFO_STRING_ARRAY:
         i = printInfo(infoName, data, i)
 
