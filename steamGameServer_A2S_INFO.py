@@ -1,5 +1,4 @@
-#!/usr/bin/env python2.7
-#
+#!/usr/bin/env python3
 # Python script to make A2S_INFO queries to steam game servers.
 #
 # Arguments: -v for verbose output
@@ -11,6 +10,7 @@
 
 import socket
 import sys
+import binascii
 
 IP_PORT = ([
     "192.223.24.83:27015", 
@@ -21,7 +21,7 @@ IP_PORT = ([
 LINE_SEP = "----------------------------------------"
 LJUST_VALUE = 11 
 
-A2S_INFO = "FFFFFFFF54536F7572636520456E67696E6520517565727900".decode("hex")
+A2S_INFO = binascii.unhexlify("FFFFFFFF54536F7572636520456E67696E6520517565727900")
 A2S_INFO_START_INDEX = 6
 A2S_INFO_STRING_ARRAY = ( 
     ["Name", "Map", "Folder", "Game"]
