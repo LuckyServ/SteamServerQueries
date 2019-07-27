@@ -172,8 +172,9 @@ i = 0
 a2sInfoArray = []
 threads = []
 for ipPort in sys.stdin:
+    ipPort = ipPort.strip()
     if len(ipPort) < 10 or ipPort[0] == "#": continue
-    a2sInfoArray.append(ValveA2SInfo(ipPort.strip()))
+    a2sInfoArray.append(ValveA2SInfo(ipPort))
     threads.append(threading.Thread(target=thread_a2sInfo_getMembers, args=(a2sInfoArray[i],)))
     i = i + 1
 
