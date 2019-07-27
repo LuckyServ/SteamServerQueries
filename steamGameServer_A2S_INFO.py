@@ -2,12 +2,15 @@
 #
 # Python script to make A2S_INFO queries to steam game servers.
 #
+# Arguments: -v for verbose output
+#
 # Author: Luckylock
 #
 # For documentation on steam game server queries, check
 # https://developer.valvesoftware.com/wiki/Server_queries
 
 import socket
+import sys
 
 IP_PORT = ([
     "192.223.24.83:27015", 
@@ -35,10 +38,12 @@ def printInfo(infoName, data, i):
     while data[i] != 0:
         strFromBytes = strFromBytes + chr(data[i])
         i = i + 1
-    if infoName != "Folder" and infoName != "Game":
+    if not(not(isVerbose) and (infoName == "Folder" or infoName == "Game")):
         print(infoName.ljust(LJUST_VALUE) + " : " + strFromBytes)
     i = i + 1
     return i
+
+isVerbose = len(sys.argv) >= 2 and sys.argv[1] == "-v"
 
 print(LINE_SEP)
 
@@ -68,12 +73,12 @@ for ipPort in IP_PORT:
         i = printInfo(infoName, data, i)
 
     # Print the numeric values
-    print("ID".ljust(LJUST_VALUE) + " : " + str((data[i]) + (data[i+1] << 8)))
+    if isVerbose: print("ID".ljust(LJUST_VALUE) + " : " + str((data[i]) + (data[i+1] << 8)))
     print("Players".ljust(LJUST_VALUE) + " : " + str(data[i+2]))
-    print("Max Players".ljust(LJUST_VALUE) + " : " + str(data[i+3]))
-    print("Bots".ljust(LJUST_VALUE) + " : " + str(data[i+4]))
-    print("Server type".ljust(LJUST_VALUE) + " : " + ("dedicated server" if chr(data[i+5]) == 'd' else "non-dedicated server" if chr(data[i+5]) == 'l' else "SourceTV relay (proxy)"))
-    print("Environment".ljust(LJUST_VALUE) + " : " + ("Linux" if chr(data[i+6]) == 'l' else "Windows" if chr(data[i+6]) == 'w' else "Mac"))
-    print("Visibility".ljust(LJUST_VALUE) + " : " + ("private" if data[i+7] else "public"))
-    print("VAC".ljust(LJUST_VALUE) + " : " + ("secured" if data[i+8] else "unsecured"))
+    if isVerbose: print("Max Players".ljust(LJUST_VALUE) + " : " + str(data[i+3]))
+    if isVerbose: print("Bots".ljust(LJUST_VALUE) + " : " + str(data[i+4]))
+    if isVerbose: print("Server type".ljust(LJUST_VALUE) + " : " + ("dedicated server" if chr(data[i+5]) == 'd' else "non-dedicated server" if chr(data[i+5]) == 'l' else "SourceTV relay (proxy)"))
+    if isVerbose: print("Environment".ljust(LJUST_VALUE) + " : " + ("Linux" if chr(data[i+6]) == 'l' else "Windows" if chr(data[i+6]) == 'w' else "Mac"))
+    if isVerbose: print("Visibility".ljust(LJUST_VALUE) + " : " + ("private" if data[i+7] else "public"))
+    if isVerbose: print("VAC".ljust(LJUST_VALUE) + " : " + ("secured" if data[i+8] else "unsecured"))
     print(LINE_SEP)
