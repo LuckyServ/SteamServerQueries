@@ -6,4 +6,4 @@
 # 
 # Author: Luckylock
 
-./steamGameServer_A2S_INFO.py < iplist e | grep -i "$1" -B 1 -A 2
+./steamGameServer_A2S_INFO.py < iplist e | grep -i -e "$1" -e "Total" -B 1 -A 2

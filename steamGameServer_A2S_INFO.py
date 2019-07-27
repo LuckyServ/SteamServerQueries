@@ -168,6 +168,7 @@ def thread_a2sInfo_getMembers(objA2sInfo):
     objA2sInfo.getMembers()
 
 # Prepare threads
+totalPlayers = 0
 i = 0
 a2sInfoArray = []
 threads = []
@@ -187,4 +188,7 @@ for t in threads:
 # Print server information
 for serverInfo in a2sInfoArray:
     if ((not(onlyActive) or serverInfo.numPlayers > 0) and (not(onlyEmpty) or serverInfo.numPlayers <= 0)): 
+        if serverInfo.connect: totalPlayers = totalPlayers + serverInfo.numPlayers
         print(serverInfo)
+
+print("Total Players: " + str(totalPlayers))
