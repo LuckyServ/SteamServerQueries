@@ -12,7 +12,7 @@ import socket
 IP_PORT = ([
     "192.223.24.83:27015", 
     "192.223.30.176:27015", 
-    "140.82.26.135:27015"
+    "140.82.26.135:27015",
 ])
 
 LINE_SEP = "----------------------------------------"
@@ -35,8 +35,8 @@ def printInfo(infoName, data, i):
     while data[i] != 0:
         strFromBytes = strFromBytes + chr(data[i])
         i = i + 1
-    #if infoName != "Folder" and infoName != "Game":
-    print(infoName.ljust(LJUST_VALUE) + " : " + strFromBytes)
+    if infoName != "Folder" and infoName != "Game":
+        print(infoName.ljust(LJUST_VALUE) + " : " + strFromBytes)
     i = i + 1
     return i
 
@@ -67,7 +67,7 @@ for ipPort in IP_PORT:
         i = printInfo(infoName, data, i)
 
     # Print the numeric values
-    print("ID".ljust(LJUST_VALUE) + " : " + str((data[i] << 8) + data[i+1]))
+    print("ID".ljust(LJUST_VALUE) + " : " + str((data[i]) + (data[i+1] << 8)))
     print("Players".ljust(LJUST_VALUE) + " : " + str(data[i+2]))
     print("Max Players".ljust(LJUST_VALUE) + " : " + str(data[i+3]))
     print("Bots".ljust(LJUST_VALUE) + " : " + str(data[i+4]))
