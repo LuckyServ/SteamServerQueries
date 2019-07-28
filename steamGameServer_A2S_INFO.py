@@ -194,14 +194,14 @@ class ValveA2SInfo:
         while self.pDataIndex < len(self.playerData):
             self.objPlayers.append(ValveA2SPlayer())
             self.objPlayers[n].index = self.playerData[self.pDataIndex]
-            self.objPlayers[n].name, self.pDataIndex = getString(self.playerData, self.pDataIndex)
+            self.objPlayers[n].name, self.pDataIndex = getString(self.playerData, self.pDataIndex + 1)
             self.objPlayers[n].score = (
                 self.playerData[self.pDataIndex] 
                 + (self.playerData[self.pDataIndex + 1] << 8) 
                 + (self.playerData[self.pDataIndex + 2] << 16) 
                 + (self.playerData[self.pDataIndex + 3] << 24)
             )
-            self.pDataIndex = self.pDataIndex + 11
+            self.pDataIndex = self.pDataIndex + 8
             n = n + 1
 
     def __str__(self):
@@ -228,8 +228,9 @@ class ValveA2SInfo:
 
             if showPlayerNames and self.numPlayers > 0:
                 s = s + "[ "
-                for p in self.objPlayers:
-                    s = s + str(p) + ", "
+                for i,p in enumerate(self.objPlayers):
+                    s = s + "'" + str(p) + "'"
+                    if i < len(self.objPlayers) - 1: s = s + ", "
                 s = s + " ]" + "\n"
         else:
             s = (

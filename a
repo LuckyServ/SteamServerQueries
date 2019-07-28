@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# Script to get active servers with part of arg1 in the info.
+# Script to get active servers with arg1 in the name.
 #
 # Example: ./a chi
 # 
 # Author: Luckylock
 
-python3 steamGameServer_A2S_INFO.py a < iplist | grep -i -e "$1" -e "Total" -B 1 -A 2
+python3 steamGameServer_A2S_INFO.py ap < iplist | grep -i -e "Name.*$1" -B 1 -A 3
