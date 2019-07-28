@@ -39,7 +39,7 @@ A2S_PLAYER = binascii.unhexlify("FFFFFFFF55FFFFFFFF")
 A2S_PLAYER_START_INDEX = 6
 
 STEAM_PACKET_SIZE = 1400
-TIMEOUT = 0.5
+TIMEOUT = 2.0
 
 isFirstLine = True
 
@@ -191,7 +191,7 @@ class ValveA2SInfo:
         n = 0
         self.numPlayersFromA2SPlayer = self.playerData[self.pDataIndex]
         self.pDataIndex += 1
-        while self.pDataIndex < len(self.playerData):
+        while self.pDataIndex + 3 < len(self.playerData):
             self.objPlayers.append(ValveA2SPlayer())
             self.objPlayers[n].index = self.playerData[self.pDataIndex]
             self.objPlayers[n].name, self.pDataIndex = getString(self.playerData, self.pDataIndex + 1)
@@ -207,8 +207,8 @@ class ValveA2SInfo:
     def __str__(self):
         if self.connect:
             s = (
-                "Server".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerIpPort + "\n" 
-                + "Name".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerName + "\n"
+                "Name".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerName + "\n"
+                + "Server".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerIpPort + "\n" 
                 + "Map".ljust(LJUST_VALUE) + FIELD_SEP + self.strMapName + "\n"
                 + "Players".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numPlayers) + "\n"
             )
@@ -259,9 +259,26 @@ for t in threads:
     t.join()
 
 # Print server information
+failedConnectCount = 0
+failedConnectList = []
 for serverInfo in a2sInfoArray:
-    if ((not(onlyActive) or serverInfo.numPlayers > 0) and (not(onlyEmpty) or serverInfo.numPlayers <= 0)): 
-        if serverInfo.connect: totalPlayers = totalPlayers + serverInfo.numPlayers
-        print(serverInfo)
+    if serverInfo.connect and serverInfo.numPlayers >= 0: 
+        totalPlayers = totalPlayers + serverInfo.numPlayers
+        if (
+            (onlyActive and serverInfo.numPlayers > 0) 
+            or (onlyEmpty and serverInfo.numPlayers == 0) 
+            or (not(onlyActive) and not(onlyEmpty))
+        ): 
+            print(serverInfo)
+    else:
+        failedConnectList.append(serverInfo.strServerIpPort)
+        failedConnectCount += 1
 
-print("Total Players: " + str(totalPlayers))
+print(
+    "Total Players: " + str(totalPlayers) 
+    + (" ({} failed connections)".format(failedConnectCount) if failedConnectCount > 0 else "")
+    + "\n" 
+)
+
+for ipPort in failedConnectList:
+    print(ipPort, file=sys.stderr)
