@@ -13,4 +13,4 @@ do
     names="$names -p $arg"
 done
 
-python3 steamGameServer_A2S_INFO.py -a $names < iplist 2> failedConnections
+python3 steamGameServer_A2S_INFO.py -a $names < compList

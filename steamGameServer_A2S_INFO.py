@@ -35,6 +35,9 @@ import threading
 import time
 import argparse
 
+MAX_THREAD_COUNT = 512
+TOO_MANY_OPEN_FILES = 24
+
 # Formatting
 LINE_SEP = "----------------------------------------"
 FIELD_SEP = " : "
@@ -48,8 +51,8 @@ A2S_PLAYER = binascii.unhexlify("FFFFFFFF55FFFFFFFF")
 A2S_PLAYER_START_INDEX = 6
 
 STEAM_PACKET_SIZE = 1400
-TIMEOUT = 0.5
-RETRIES = 3
+TIMEOUT = 0.3
+RETRIES = 5
 
 # Gets string from data starting from index.
 #
@@ -164,7 +167,11 @@ class ValveA2SInfo:
 
                 self.connect = True
                 sock.close
-            except socket.error:
+            except socket.error as e:
+                if e.errno == TOO_MANY_OPEN_FILES:
+                    print("Too many threads, reduce MAX_THREAD_COUNT.", file=sys.stderr)
+                elif "timed out" not in str(e) and "service not know" not in str(e):
+                    print(str(e), file=sys.stderr)
                 self.connect = False
 
     # Gets the string variables from the data
@@ -313,28 +320,41 @@ for ipPort in sys.stdin:
     i += 1
 
 # Launch threads
-for t in threads:
+for i,t in enumerate(threads):
     t.start()
+
+    # Don't start too many threads, wait for ones previously opened.
+    if i >= MAX_THREAD_COUNT:
+        threads[i - MAX_THREAD_COUNT].join()
 for t in threads:
     t.join()
 
 # Print server information
 failedConnectCount = 0
+successConnectCount = 0
+resultTotal = 0
 failedConnectList = []
 for serverInfo in sorted(a2sInfoArray, key = lambda x: x.ping, reverse=True):
-    if serverInfo.connect and serverInfo.numPlayers >= 0: 
-        if serverInfo.shouldPrint():
+    if serverInfo.connect:
+        successConnectCount += 1
+        if serverInfo.numPlayers >= 0 and serverInfo.shouldPrint(): 
+            resultTotal += 1
             totalPlayers = totalPlayers + serverInfo.numPlayers
             print(serverInfo)
     else:
         failedConnectList.append(serverInfo.strServerIpPort)
         failedConnectCount += 1
 
+# Print summary
 print(
     "Total Players: " + str(totalPlayers) 
-    + (" ({} failed connections)".format(failedConnectCount) if failedConnectCount > 0 else "")
+    + (" ({} showing, {} successful, {} failed, {} total)".format(resultTotal, successConnectCount, failedConnectCount, len(a2sInfoArray)))
     + "\n" 
 )
 
-for ipPort in failedConnectList:
-    print(ipPort, file=sys.stderr)
+# Write failed ip:port to file
+if failedConnectCount > 0:
+    f = open("failedConnections", "w")
+    for ipPort in failedConnectList:
+        f.write(ipPort + "\n")
+    f.close()
