@@ -214,7 +214,7 @@ class ValveA2SInfo:
             )
 
             if isVerbose:
-                s = s + (
+                s += (
                     "Game".ljust(LJUST_VALUE) + FIELD_SEP + self.strGame + "\n"
                     + "Folder".ljust(LJUST_VALUE) + FIELD_SEP + self.strFolder + "\n"
                     + "ID".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numId) + "\n"
@@ -227,11 +227,8 @@ class ValveA2SInfo:
                 )
 
             if showPlayerNames and self.numPlayers > 0:
-                s = s + "[ "
-                for i,p in enumerate(self.objPlayers):
-                    s = s + "'" + str(p) + "'"
-                    if i < len(self.objPlayers) - 1: s = s + ", "
-                s = s + " ]" + "\n"
+                s += str(list(map(str, self.objPlayers))) + "\n"
+
         else:
             s = (
                 "Server".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerIpPort + "\n"
