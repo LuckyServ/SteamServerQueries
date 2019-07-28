@@ -10,18 +10,7 @@
 # 192.223.30.176:27015
 # 140.82.26.135:27015
 #
-# usage: steamGameServer_A2S_INFO.py [-h] [-a] [-e] [-v] [-n NAME] [-p PLAYER]
-# 
-# Make requests to steam game servers
-# 
-# optional arguments:
-#   -h, --help            show this help message and exit
-#   -a, --active          only active servers
-#   -e, --empty           only empty servers
-#   -v, --verbose         verbose information
-#   -n NAME, --name NAME  search for server name
-#   -p PLAYER, --player PLAYER
-#                         search for player
+# usage: steamGameServer_A2S_INFO.py -h
 #
 # Author: Luckylock
 #
