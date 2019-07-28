@@ -343,13 +343,13 @@ for t in threads:
 # Print server information
 failedConnectCount = 0
 successConnectCount = 0
-resultTotal = 0
+resultShowing = 0
 failedConnectList = []
 for serverInfo in sorted(a2sInfoArray, key = lambda x: x.ping, reverse=True):
     if serverInfo.connect:
         successConnectCount += 1
         if serverInfo.numPlayers >= 0 and serverInfo.shouldPrint(): 
-            resultTotal += 1
+            resultShowing += 1
             totalPlayers = totalPlayers + serverInfo.numPlayers
             print(serverInfo)
     else:
@@ -360,8 +360,7 @@ for serverInfo in sorted(a2sInfoArray, key = lambda x: x.ping, reverse=True):
 if not(showPlayers) and not(isVerbose): print()
 print(
     "Total Players: " + str(totalPlayers) 
-    + (" ({} showing, {} successful, {} failed, {} total)".format(resultTotal, successConnectCount, failedConnectCount, len(a2sInfoArray)))
-    + "\n" 
+    + (" ({} showing, {} successful, {} failed, {} total)".format(resultShowing, successConnectCount, failedConnectCount, len(a2sInfoArray)))
 )
 
 # Write failed ip:port to file
