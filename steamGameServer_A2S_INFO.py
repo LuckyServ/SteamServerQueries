@@ -275,7 +275,7 @@ for serverInfo in a2sInfoArray:
         failedConnectCount += 1
 
 print(
-    "Total Players: " + str(totalPlayers) 
+    "\n\n\nTotal Players: " + str(totalPlayers) 
     + (" ({} failed connections)".format(failedConnectCount) if failedConnectCount > 0 else "")
     + "\n" 
 )
