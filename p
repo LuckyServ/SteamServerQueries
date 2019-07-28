@@ -6,4 +6,4 @@
 # 
 # Author: Luckylock
 
-python3 steamGameServer_A2S_INFO.py ap < iplist | grep -i -e "\[ .*$1.* \]" -B 3
+python3 steamGameServer_A2S_INFO.py ap < iplist | grep -i -e "\[ .*$1.* \]" -B 4
