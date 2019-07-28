@@ -5,7 +5,7 @@ has only been tested on competitive L4D2 servers.
 
 ## a
 
-Bash script that filters for active / available servers. First argument filters
+Bash script that filters for active servers. First argument filters
 by server name.  
 
 Example usage: ``` ./a ny ```
