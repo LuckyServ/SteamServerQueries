@@ -10,11 +10,18 @@
 # 192.223.30.176:27015
 # 140.82.26.135:27015
 #
-# Arguments: 
-#    -v for verbose output
-#    -a for only active servers
-#    -e for only empty servers
-#    -p show player names
+# usage: steamGameServer_A2S_INFO.py [-h] [-a] [-e] [-v] [-n NAME] [-p PLAYER]
+# 
+# Make requests to steam game servers
+# 
+# optional arguments:
+#   -h, --help            show this help message and exit
+#   -a, --active          only active servers
+#   -e, --empty           only empty servers
+#   -v, --verbose         verbose information
+#   -n NAME, --name NAME  search for server name
+#   -p PLAYER, --player PLAYER
+#                         search for player
 #
 # Author: Luckylock
 #
@@ -26,6 +33,7 @@ import sys
 import binascii
 import threading
 import time
+import argparse
 
 # Formatting
 LINE_SEP = "----------------------------------------"
@@ -42,21 +50,6 @@ A2S_PLAYER_START_INDEX = 6
 STEAM_PACKET_SIZE = 1400
 TIMEOUT = 0.5
 RETRIES = 3
-
-isFirstLine = True
-
-# Arguments handling (eh.. it'll do)
-allArgs = ""
-for i in range(1, len(sys.argv)):
-    allArgs = allArgs + sys.argv[1]
-isVerbose = "v" in allArgs
-onlyActive = "a" in allArgs
-onlyEmpty = "e" in allArgs
-showPlayerNames = "p" in allArgs
-
-if onlyEmpty and onlyActive:
-    print("Option -e (only empty) and -a (only active) can't be used together.")
-    raise SystemExit
 
 # Gets string from data starting from index.
 #
@@ -159,7 +152,7 @@ class ValveA2SInfo:
                 self.getStrings()
                 self.getNumericValues()
 
-                if showPlayerNames and self.numPlayers > 0:
+                if self.numPlayers > 0:
                     # Get player list
                     sock.sendto(A2S_PLAYER, (ipPortSplit[0], int(ipPortSplit[1])))
                     rawPlayerData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
@@ -243,7 +236,7 @@ class ValveA2SInfo:
                     + "VAC".ljust(LJUST_VALUE) + FIELD_SEP + self.strVAC + "\n"
                 )
 
-            if showPlayerNames and self.numPlayers > 0:
+            if self.numPlayers > 0:
                 s += str(list(map(str, self.objPlayers))) + "\n"
 
         else:
@@ -253,9 +246,59 @@ class ValveA2SInfo:
             )
 
         return s
+    
+    def shouldPrint(self):
+        # Only active and active logic
+        p = (
+            (onlyActive and serverInfo.numPlayers > 0) 
+            or (onlyEmpty and serverInfo.numPlayers == 0) 
+            or (not(onlyActive) and not(onlyEmpty))
+        ) 
+
+        # Search for server name
+        if searchNames != None:
+            p = p and (
+                True in map(lambda argName: argName.lower() in self.strServerName.lower(), searchNames)     
+            )
+
+        # Search for player
+        if searchPlayers != None:
+            playerFound = self.numPlayers > 0
+
+            if playerFound:
+                for player in self.objPlayers:
+                    playerFound = True in map(lambda argPlayer: argPlayer.lower() in player.name.lower(), searchPlayers)
+                    if playerFound: break
+
+            p = p and playerFound
+
+        return p
 
 def thread_a2sInfo_getMembers(objA2sInfo):
     objA2sInfo.getMembers()
+
+##############
+# SCRIPT START
+##############
+
+# Arguments handling
+parser = argparse.ArgumentParser(description="Make requests to steam game servers")
+parser.add_argument("-a", "--active", action='store_true', help="only active servers")
+parser.add_argument("-e", "--empty", action='store_true', help="only empty servers")
+parser.add_argument("-v", "--verbose", action='store_true', help="verbose information")
+parser.add_argument("-n", "--name", action='append', help="search for server name")
+parser.add_argument("-p", "--player", action = 'append', help="search for player")
+parsedArgs = parser.parse_args()
+
+onlyEmpty = parsedArgs.empty
+onlyActive = parsedArgs.active
+searchNames = parsedArgs.name
+searchPlayers = parsedArgs.player
+isVerbose = parsedArgs.verbose
+
+if onlyEmpty and onlyActive:
+    print("Option -e (only empty) and -a (only active) can't be used together.")
+    raise SystemExit
 
 # Prepare threads
 totalPlayers = 0
@@ -280,19 +323,15 @@ failedConnectCount = 0
 failedConnectList = []
 for serverInfo in sorted(a2sInfoArray, key = lambda x: x.ping, reverse=True):
     if serverInfo.connect and serverInfo.numPlayers >= 0: 
-        totalPlayers = totalPlayers + serverInfo.numPlayers
-        if (
-            (onlyActive and serverInfo.numPlayers > 0) 
-            or (onlyEmpty and serverInfo.numPlayers == 0) 
-            or (not(onlyActive) and not(onlyEmpty))
-        ): 
+        if serverInfo.shouldPrint():
+            totalPlayers = totalPlayers + serverInfo.numPlayers
             print(serverInfo)
     else:
         failedConnectList.append(serverInfo.strServerIpPort)
         failedConnectCount += 1
 
 print(
-    "\n\n\n\nTotal Players: " + str(totalPlayers) 
+    "Total Players: " + str(totalPlayers) 
     + (" ({} failed connections)".format(failedConnectCount) if failedConnectCount > 0 else "")
     + "\n" 
 )

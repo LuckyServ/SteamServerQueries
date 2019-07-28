@@ -1,9 +1,16 @@
 #!/bin/bash
 #
-# Script to get empty servers with arg1 in the name.
+# Script to get empty servers filtered by list of names.
 #
 # Example: ./e chi
 # 
 # Author: Luckylock
 
-python3 steamGameServer_A2S_INFO.py e < iplist 2> failedConnections | grep -i -e "Name.*$1" -e "Total Players" -B 0 -A 4
+names=""
+
+for arg in "$@"
+do
+    names="$names -n $arg"
+done
+
+python3 steamGameServer_A2S_INFO.py -e $names < iplist 2> failedConnections

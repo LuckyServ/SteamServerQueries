@@ -1,9 +1,16 @@
 #!/bin/bash
 #
-# Script to search a player in all the servers.
+# Script to search for a list of players in all the servers.
 #
-# Example: ./p lucky
+# Example: ./p lucky bob
 # 
 # Author: Luckylock
 
-python3 steamGameServer_A2S_INFO.py ap < iplist 2> failedConnections | grep -i -e "\[.*$1.*\]" -e "Total Players" -B 5
+names=""
+
+for arg in "$@"
+do
+    names="$names -p $arg"
+done
+
+python3 steamGameServer_A2S_INFO.py -a $names < iplist 2> failedConnections
