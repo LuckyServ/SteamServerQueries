@@ -43,7 +43,7 @@ TIMEOUT = 0.5
 
 isFirstLine = True
 
-# Arguments handling
+# Arguments handling (eh.. it'll do)
 allArgs = ""
 for i in range(1, len(sys.argv)):
     allArgs = allArgs + sys.argv[1]
@@ -64,12 +64,21 @@ if onlyEmpty and onlyActive:
 def getString(data, index):
     strFromBytes = ""
     startIndex = index
+    foundString = False
 
     # Assemble string until null byte is found
     while data[index] != 0:
         index = index + 1
 
-    strFromBytes = str(data[startIndex:index], "utf-8")
+    # There are sometimes decoding issues, just move up the start index
+    # until it can decode properly.
+    while not(foundString) and startIndex < index:
+        try:
+            strFromBytes = str(data[startIndex:index], "utf-8")
+            foundString = True
+        except UnicodeDecodeError: 
+            startIndex = startIndex + 1
+
     index = index + 1
     return strFromBytes, index
 
@@ -146,7 +155,7 @@ class ValveA2SInfo:
 
             self.connect = True
             sock.close
-        except:
+        except socket.error:
             self.connect = False
 
     # Gets the string variables from the data
@@ -180,7 +189,7 @@ class ValveA2SInfo:
     # Creates player objects and parses the player data
     def getPlayerInfo(self):
         n = 0
-        self.numPlayersFromA2SPlayer = int(self.playerData[self.pDataIndex])
+        self.numPlayersFromA2SPlayer = self.playerData[self.pDataIndex]
         self.pDataIndex = self.pDataIndex + 1
         while self.pDataIndex < len(self.playerData):
             self.objPlayers.append(ValveA2SPlayer())
