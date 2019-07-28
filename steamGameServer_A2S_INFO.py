@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Python script to make A2S_INFO queries to steam game servers.
+# Python script to make A2S_INFO and A2S_PLAYER requests to steam game servers.
 #
 # It reads the server list to query from stdin, each line has to be ip:port.
 #
@@ -289,9 +289,9 @@ def thread_a2sInfo_getMembers(objA2sInfo):
 ##############
 
 # Arguments handling
-parser = argparse.ArgumentParser(description="Make requests to steam game servers")
-parser.add_argument("-a", "--active", action='store_true', help="only active servers")
-parser.add_argument("-e", "--empty", action='store_true', help="only empty servers")
+parser = argparse.ArgumentParser(description="Make A2S_INFO and A2S_PLAYER requests to steam game servers.")
+parser.add_argument("-a", "--active", action='store_true', help="only show active servers")
+parser.add_argument("-e", "--empty", action='store_true', help="only show empty servers")
 parser.add_argument("-v", "--verbose", action='store_true', help="verbose information")
 parser.add_argument("-n", "--name", action='append', help="search for server name")
 parser.add_argument("-p", "--player", action = 'append', help="search for player")
