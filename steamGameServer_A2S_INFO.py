@@ -14,6 +14,7 @@
 #    -v for verbose output
 #    -a for only active servers
 #    -e for only empty servers
+#    -p show player names
 #
 # Author: Luckylock
 #
@@ -34,8 +35,11 @@ LJUST_VALUE = 11
 A2S_INFO = binascii.unhexlify("FFFFFFFF54536F7572636520456E67696E6520517565727900")
 A2S_INFO_START_INDEX = 6
 
+A2S_PLAYER = binascii.unhexlify("FFFFFFFF55FFFFFFFF")
+A2S_PLAYER_START_INDEX = 6
+
 STEAM_PACKET_SIZE = 1400
-TIMEOUT = 0.3
+TIMEOUT = 0.5
 
 isFirstLine = True
 
@@ -46,11 +50,34 @@ for i in range(1, len(sys.argv)):
 isVerbose = "v" in allArgs
 onlyActive = "a" in allArgs
 onlyEmpty = "e" in allArgs
+showPlayerNames = "p" in allArgs
 
 if onlyEmpty and onlyActive:
-    print("Option -e (only empty) and -a (only active) can't be used together.", 
-        file=sys.stderr)
+    print("Option -e (only empty) and -a (only active) can't be used together.")
     raise SystemExit
+
+def getString(data, index):
+    strFromBytes = ""
+
+    # Assemble string until null byte is found
+    while data[index] != 0:
+        strFromBytes = strFromBytes + chr(data[index])
+        index = index + 1
+
+    index = index + 1
+    return strFromBytes, index
+
+class ValveA2SPlayer:
+    def __init__(self):
+
+        # Initialise
+        self.index = -1
+        self.name = ""
+        self.score = -1
+        self.duration = -1
+
+    def __str__(self):
+        return self.name
 
 class ValveA2SInfo:
     def __init__(self, strServerIpPort): 
@@ -58,11 +85,13 @@ class ValveA2SInfo:
         # Initialise
         self.strServerIpPort = strServerIpPort
         self.dataIndex = A2S_INFO_START_INDEX
+        self.pDataIndex = A2S_PLAYER_START_INDEX
         self.strServerName = ""
         self.strMapName = ""
         self.strFolder = ""
         self.strGame = ""
         self.numPlayers = -1
+        self.strPlayers = ""
         self.numId = -1
         self.numMaxPlayers = -1
         self.numBots = -1
@@ -71,6 +100,8 @@ class ValveA2SInfo:
         self.strVisibility = ""
         self.strVAC = ""
         self.connect = False
+        self.objPlayers = []
+        self.numPlayersFromA2SPlayer = 0
 
     def getMembers(self):
         # Send A2S_INFO request and get response from steam game server
@@ -87,33 +118,33 @@ class ValveA2SInfo:
             sock.sendto(A2S_INFO, (ipPortSplit[0], int(ipPortSplit[1])))
 
             # Get answer from server
-            rawData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
-
+            rawInfoData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
+            
             # Done
-            sock.close
-            self.data = bytearray(rawData)
+            self.data = bytearray(rawInfoData)
             self.getStrings()
             self.getNumericValues()
+
+            if showPlayerNames and self.numPlayers > 0:
+                # Get player list
+                sock.sendto(A2S_PLAYER, (ipPortSplit[0], int(ipPortSplit[1])))
+                rawPlayerData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
+                sock.sendto(bytearray(binascii.unhexlify("FFFFFFFF55")) + bytearray(rawPlayerData)[5:], (ipPortSplit[0], int(ipPortSplit[1])))
+                rawPlayerData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
+
+                self.playerData = bytearray(rawPlayerData)
+                self.getPlayerInfo()
+
             self.connect = True
+            sock.close
         except:
             self.connect = False
 
     def getStrings(self):
-        self.strServerName = self.getString()
-        self.strMapName = self.getString()
-        self.strFolder = self.getString()
-        self.strGame = self.getString()
-
-    def getString(self):
-        strFromBytes = ""
-
-        # Assemble string until null byte is found
-        while self.data[self.dataIndex] != 0:
-            strFromBytes = strFromBytes + chr(self.data[self.dataIndex])
-            self.dataIndex = self.dataIndex + 1
-
-        self.dataIndex = self.dataIndex + 1
-        return strFromBytes
+        self.strServerName, self.dataIndex = getString(self.data, self.dataIndex)
+        self.strMapName, self.dataIndex = getString(self.data, self.dataIndex)
+        self.strFolder, self.dataIndex = getString(self.data, self.dataIndex)
+        self.strGame, self.dataIndex = getString(self.data, self.dataIndex)
 
     def getNumericValues(self):
         i = self.dataIndex
@@ -134,6 +165,24 @@ class ValveA2SInfo:
         )
         self.strVisibility = "private" if data[i+7] else "public"
         self.strVAC = "secured" if data[i+8] else "unsecured"
+
+    def getPlayerInfo(self):
+        n = 0
+        self.numPlayersFromA2SPlayer = int(self.playerData[self.pDataIndex])
+        self.pDataIndex = self.pDataIndex + 1
+        while self.pDataIndex < len(self.playerData):
+            self.objPlayers.append(ValveA2SPlayer())
+            self.objPlayers[n].index = self.playerData[self.pDataIndex]
+            self.objPlayers[n].name, self.pDataIndex = getString(self.playerData, self.pDataIndex)
+            self.objPlayers[n].score = (
+                self.playerData[self.pDataIndex] 
+                + (self.playerData[self.pDataIndex + 1] << 8) 
+                + (self.playerData[self.pDataIndex + 2] << 16) 
+                + (self.playerData[self.pDataIndex + 3] << 24)
+            )
+            self.pDataIndex = self.pDataIndex + 11
+            n = n + 1
+
 
     def __str__(self):
         if self.connect:
@@ -156,6 +205,12 @@ class ValveA2SInfo:
                     + "Visibility".ljust(LJUST_VALUE) + FIELD_SEP + self.strVisibility + "\n"
                     + "VAC".ljust(LJUST_VALUE) + FIELD_SEP + self.strVAC + "\n"
                 )
+
+            if showPlayerNames and self.numPlayers > 0:
+                s = s + "[ "
+                for p in self.objPlayers:
+                    s = s + str(p) + ", "
+                s = s + " ]" + "\n"
         else:
             s = (
                 "Server".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerIpPort + "\n"
