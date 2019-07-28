@@ -25,6 +25,7 @@ import socket
 import sys
 import binascii
 import threading
+import time
 
 # Formatting
 LINE_SEP = "----------------------------------------"
@@ -39,7 +40,8 @@ A2S_PLAYER = binascii.unhexlify("FFFFFFFF55FFFFFFFF")
 A2S_PLAYER_START_INDEX = 6
 
 STEAM_PACKET_SIZE = 1400
-TIMEOUT = 2.0
+TIMEOUT = 0.5
+RETRIES = 3
 
 isFirstLine = True
 
@@ -98,9 +100,10 @@ class ValveA2SPlayer:
 # Represents A2S_INFO
 class ValveA2SInfo:
     def __init__(self, strServerIpPort): 
-
-        # Initialise
         self.strServerIpPort = strServerIpPort
+        self.initialise()
+
+    def initialise(self):
         self.dataIndex = A2S_INFO_START_INDEX
         self.pDataIndex = A2S_PLAYER_START_INDEX
         self.strServerName = ""
@@ -119,44 +122,57 @@ class ValveA2SInfo:
         self.connect = False
         self.objPlayers = []
         self.numPlayersFromA2SPlayer = 0
+        self.ping = 1000
 
     # Requests information from server and stores it in class variables.
     def getMembers(self):
-        # Send A2S_INFO request and get response from steam game server
-        try:
-            ipPortSplit = self.strServerIpPort.split(":")
+        socketRetries = 0
+        
+        # UDP packets can be unreliable, so request as many times as needed.
+        while not(self.connect) and socketRetries < RETRIES:
+            socketRetries += 1
+            self.initialise()
 
-            # Prep socket for UDP
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            # Send A2S_INFO request and get response from steam game server
+            try:
+                ipPortSplit = self.strServerIpPort.split(":")
 
-            # Don't wait forever for a response
-            sock.settimeout(TIMEOUT)
+                # Prep socket for UDP
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-            # Send steam game server request
-            sock.sendto(A2S_INFO, (ipPortSplit[0], int(ipPortSplit[1])))
+                # Don't wait forever for a response
+                sock.settimeout(TIMEOUT)
 
-            # Get answer from server
-            rawInfoData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
-            
-            # Done
-            self.data = bytearray(rawInfoData)
-            self.getStrings()
-            self.getNumericValues()
+                # Calculate start time (for ping)
+                startTime = time.time()
 
-            if showPlayerNames and self.numPlayers > 0:
-                # Get player list
-                sock.sendto(A2S_PLAYER, (ipPortSplit[0], int(ipPortSplit[1])))
-                rawPlayerData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
-                sock.sendto(bytearray(binascii.unhexlify("FFFFFFFF55")) + bytearray(rawPlayerData)[5:], (ipPortSplit[0], int(ipPortSplit[1])))
-                rawPlayerData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
+                # Send steam game server request
+                sock.sendto(A2S_INFO, (ipPortSplit[0], int(ipPortSplit[1])))
 
-                self.playerData = bytearray(rawPlayerData)
-                self.getPlayerInfo()
+                # Get answer from server
+                rawInfoData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
 
-            self.connect = True
-            sock.close
-        except socket.error:
-            self.connect = False
+                self.ping = (time.time() - startTime) * 1000
+                
+                # Done
+                self.data = bytearray(rawInfoData)
+                self.getStrings()
+                self.getNumericValues()
+
+                if showPlayerNames and self.numPlayers > 0:
+                    # Get player list
+                    sock.sendto(A2S_PLAYER, (ipPortSplit[0], int(ipPortSplit[1])))
+                    rawPlayerData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
+                    sock.sendto(bytearray(binascii.unhexlify("FFFFFFFF55")) + bytearray(rawPlayerData)[5:], (ipPortSplit[0], int(ipPortSplit[1])))
+                    rawPlayerData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
+
+                    self.playerData = bytearray(rawPlayerData)
+                    self.getPlayerInfo()
+
+                self.connect = True
+                sock.close
+            except socket.error:
+                self.connect = False
 
     # Gets the string variables from the data
     def getStrings(self):
@@ -209,6 +225,7 @@ class ValveA2SInfo:
             s = (
                 "Name".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerName + "\n"
                 + "Server".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerIpPort + "\n" 
+                + "Ping".ljust(LJUST_VALUE) + FIELD_SEP + str(int(self.ping)) + " ms" + "\n"
                 + "Map".ljust(LJUST_VALUE) + FIELD_SEP + self.strMapName + "\n"
                 + "Players".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numPlayers) + "\n"
             )
@@ -261,7 +278,7 @@ for t in threads:
 # Print server information
 failedConnectCount = 0
 failedConnectList = []
-for serverInfo in a2sInfoArray:
+for serverInfo in sorted(a2sInfoArray, key = lambda x: x.ping, reverse=True):
     if serverInfo.connect and serverInfo.numPlayers >= 0: 
         totalPlayers = totalPlayers + serverInfo.numPlayers
         if (
@@ -275,7 +292,7 @@ for serverInfo in a2sInfoArray:
         failedConnectCount += 1
 
 print(
-    "\n\n\nTotal Players: " + str(totalPlayers) 
+    "\n\n\n\nTotal Players: " + str(totalPlayers) 
     + (" ({} failed connections)".format(failedConnectCount) if failedConnectCount > 0 else "")
     + "\n" 
 )

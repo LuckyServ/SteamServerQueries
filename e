@@ -6,4 +6,4 @@
 # 
 # Author: Luckylock
 
-python3 steamGameServer_A2S_INFO.py e < iplist 2> failedConnections | grep -i -e "Name.*$1" -e "Total Players" -B 0 -A 3
+python3 steamGameServer_A2S_INFO.py e < iplist 2> failedConnections | grep -i -e "Name.*$1" -e "Total Players" -B 0 -A 4
