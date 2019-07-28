@@ -273,14 +273,22 @@ class ValveA2SInfo:
             or (not(onlyActive) and not(onlyEmpty))
         ) 
 
+        # Minimum player count
+        if p and minPlayerCount != None:
+            p = p and self.numPlayers >= minPlayerCount
+
+        # Maximum player count
+        if p and maxPlayerCount != None:
+            p = p and self.numPlayers <= maxPlayerCount
+
         # Search for server name
-        if searchNames != None:
+        if p and searchNames != None:
             p = p and (
                 True in map(lambda argName: argName.lower() in self.strServerName.lower(), searchNames)     
             )
 
         # Search for player
-        if searchPlayers != None:
+        if p and searchPlayers != None:
             playerFound = self.numPlayers > 0
 
             if playerFound:
@@ -307,6 +315,8 @@ parser.add_argument("-v", "--verbose", action='store_true', help="verbose inform
 parser.add_argument("-s", "--showplayers", action = 'store_true', help="show players")
 parser.add_argument("-n", "--name", action='append', help="search for server name")
 parser.add_argument("-p", "--player", action = 'append', help="search for player")
+parser.add_argument("-m", "--minplayer", type=int, help="minimum player count (inclusive)")
+parser.add_argument("-x", "--maxplayer", type=int, help="maximum player count (inclusive)")
 parsedArgs = parser.parse_args()
 
 onlyEmpty = parsedArgs.empty
@@ -315,6 +325,8 @@ searchNames = parsedArgs.name
 searchPlayers = parsedArgs.player
 isVerbose = parsedArgs.verbose
 showPlayers = parsedArgs.showplayers or searchPlayers != None
+minPlayerCount = parsedArgs.minplayer
+maxPlayerCount = parsedArgs.maxplayer
 
 # Invalid arguments combination
 if onlyEmpty and onlyActive:
