@@ -56,17 +56,24 @@ if onlyEmpty and onlyActive:
     print("Option -e (only empty) and -a (only active) can't be used together.")
     raise SystemExit
 
+# Gets string from data starting from index.
+#
+# @param data bytearray data from server response
+# @param index position to start building the string
+# @return (str, index) tuple where str is the built string and index the new position
 def getString(data, index):
     strFromBytes = ""
+    startIndex = index
 
     # Assemble string until null byte is found
     while data[index] != 0:
-        strFromBytes = strFromBytes + chr(data[index])
         index = index + 1
 
+    strFromBytes = str(data[startIndex:index], "utf-8")
     index = index + 1
     return strFromBytes, index
 
+# Represents a single player information from A2S_PLAYER
 class ValveA2SPlayer:
     def __init__(self):
 
@@ -79,6 +86,7 @@ class ValveA2SPlayer:
     def __str__(self):
         return self.name
 
+# Represents A2S_INFO
 class ValveA2SInfo:
     def __init__(self, strServerIpPort): 
 
@@ -103,6 +111,7 @@ class ValveA2SInfo:
         self.objPlayers = []
         self.numPlayersFromA2SPlayer = 0
 
+    # Requests information from server and stores it in class variables.
     def getMembers(self):
         # Send A2S_INFO request and get response from steam game server
         try:
@@ -140,12 +149,14 @@ class ValveA2SInfo:
         except:
             self.connect = False
 
+    # Gets the string variables from the data
     def getStrings(self):
         self.strServerName, self.dataIndex = getString(self.data, self.dataIndex)
         self.strMapName, self.dataIndex = getString(self.data, self.dataIndex)
         self.strFolder, self.dataIndex = getString(self.data, self.dataIndex)
         self.strGame, self.dataIndex = getString(self.data, self.dataIndex)
 
+    # Gets the numeric variables from the data
     def getNumericValues(self):
         i = self.dataIndex
         data = self.data
@@ -166,6 +177,7 @@ class ValveA2SInfo:
         self.strVisibility = "private" if data[i+7] else "public"
         self.strVAC = "secured" if data[i+8] else "unsecured"
 
+    # Creates player objects and parses the player data
     def getPlayerInfo(self):
         n = 0
         self.numPlayersFromA2SPlayer = int(self.playerData[self.pDataIndex])
@@ -182,7 +194,6 @@ class ValveA2SInfo:
             )
             self.pDataIndex = self.pDataIndex + 11
             n = n + 1
-
 
     def __str__(self):
         if self.connect:
