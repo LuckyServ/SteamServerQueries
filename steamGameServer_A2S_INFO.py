@@ -10,6 +10,8 @@
 # 192.223.30.176:27015
 # 140.82.26.135:27015
 #
+# Failed connections are logged in the failedConnections file.
+#
 # usage: steamGameServer_A2S_INFO.py -h
 #
 # Author: Luckylock
@@ -35,6 +37,7 @@ LINE_SEP = "----------------------------------------"
 FIELD_SEP = " : "
 LJUST_VALUE = 11 
 maxNameLength = 10
+maxMapLength = 10
 
 # A2S values from Valve documentation
 A2S_INFO = binascii.unhexlify("FFFFFFFF54536F7572636520456E67696E6520517565727900")
@@ -170,11 +173,15 @@ class ValveA2SInfo:
     # Gets the string variables from the data
     def getStrings(self):
         global maxNameLength
+        global maxMapLength
+
         self.strServerName, self.dataIndex = getString(self.data, self.dataIndex)
-        maxNameLength = len(self.strServerName) + 2 if len(self.strServerName) + 2 > maxNameLength else maxNameLength
         self.strMapName, self.dataIndex = getString(self.data, self.dataIndex)
         self.strFolder, self.dataIndex = getString(self.data, self.dataIndex)
         self.strGame, self.dataIndex = getString(self.data, self.dataIndex)
+
+        maxNameLength = max(maxNameLength, len(self.strServerName) + 2)
+        maxMapLength = max(maxMapLength, len(self.strMapName) + 2)
 
     # Gets the numeric variables from the data
     def getNumericValues(self):
@@ -221,8 +228,8 @@ class ValveA2SInfo:
                 s = (
                     self.strServerName.ljust(maxNameLength)
                     + self.strServerIpPort.ljust(23)
-                    + (str(int(self.ping)) + " ms").ljust(8)
-                    + self.strMapName.ljust(20)
+                    + (str(int(self.ping)).rjust(3) + " ms").ljust(8)
+                    + self.strMapName.ljust(maxMapLength)
                     + str(self.numPlayers).ljust(4)
                 )
             else:
