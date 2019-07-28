@@ -31,6 +31,7 @@ TOO_MANY_OPEN_FILES = 24
 LINE_SEP = "----------------------------------------"
 FIELD_SEP = " : "
 LJUST_VALUE = 11 
+maxNameLength = 10
 
 # A2S_INFO values from Valve documentation
 A2S_INFO = binascii.unhexlify("FFFFFFFF54536F7572636520456E67696E6520517565727900")
@@ -144,7 +145,7 @@ class ValveA2SInfo:
                 self.getStrings()
                 self.getNumericValues()
 
-                if self.numPlayers > 0:
+                if showPlayers and self.numPlayers > 0:
                     # Get player list
                     sock.sendto(A2S_PLAYER, (ipPortSplit[0], int(ipPortSplit[1])))
                     rawPlayerData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
@@ -165,7 +166,9 @@ class ValveA2SInfo:
 
     # Gets the string variables from the data
     def getStrings(self):
+        global maxNameLength
         self.strServerName, self.dataIndex = getString(self.data, self.dataIndex)
+        maxNameLength = len(self.strServerName) + 2 if len(self.strServerName) + 2 > maxNameLength else maxNameLength
         self.strMapName, self.dataIndex = getString(self.data, self.dataIndex)
         self.strFolder, self.dataIndex = getString(self.data, self.dataIndex)
         self.strGame, self.dataIndex = getString(self.data, self.dataIndex)
@@ -211,13 +214,22 @@ class ValveA2SInfo:
 
     def __str__(self):
         if self.connect:
-            s = (
-                "Name".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerName + "\n"
-                + "Server".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerIpPort + "\n" 
-                + "Ping".ljust(LJUST_VALUE) + FIELD_SEP + str(int(self.ping)) + " ms" + "\n"
-                + "Map".ljust(LJUST_VALUE) + FIELD_SEP + self.strMapName + "\n"
-                + "Players".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numPlayers) + "\n"
-            )
+            if not(showPlayers) and not(isVerbose):
+                s = (
+                    self.strServerName.ljust(maxNameLength)
+                    + self.strServerIpPort.ljust(23)
+                    + (str(int(self.ping)) + " ms").ljust(8)
+                    + self.strMapName.ljust(20)
+                    + str(self.numPlayers).ljust(4)
+                )
+            else:
+                s = (
+                    "Name".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerName + "\n"
+                    + "Server".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerIpPort + "\n" 
+                    + "Ping".ljust(LJUST_VALUE) + FIELD_SEP + str(int(self.ping)) + " ms" + "\n"
+                    + "Map".ljust(LJUST_VALUE) + FIELD_SEP + self.strMapName + "\n"
+                    + "Players".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numPlayers) + "\n"
+                )
 
             if isVerbose:
                 s += (
@@ -232,7 +244,7 @@ class ValveA2SInfo:
                     + "VAC".ljust(LJUST_VALUE) + FIELD_SEP + self.strVAC + "\n"
                 )
 
-            if self.numPlayers > 0:
+            if showPlayers and self.numPlayers > 0:
                 s += str(list(map(str, self.objPlayers))) + "\n"
 
         else:
@@ -282,6 +294,7 @@ parser = argparse.ArgumentParser(description="Make A2S_INFO and A2S_PLAYER reque
 parser.add_argument("-a", "--active", action='store_true', help="only show active servers")
 parser.add_argument("-e", "--empty", action='store_true', help="only show empty servers")
 parser.add_argument("-v", "--verbose", action='store_true', help="verbose information")
+parser.add_argument("-s", "--showplayers", action = 'store_true', help="show players")
 parser.add_argument("-n", "--name", action='append', help="search for server name")
 parser.add_argument("-p", "--player", action = 'append', help="search for player")
 parsedArgs = parser.parse_args()
@@ -291,6 +304,7 @@ onlyActive = parsedArgs.active
 searchNames = parsedArgs.name
 searchPlayers = parsedArgs.player
 isVerbose = parsedArgs.verbose
+showPlayers = parsedArgs.showplayers
 
 if onlyEmpty and onlyActive:
     print("Option -e (only empty) and -a (only active) can't be used together.")
@@ -335,6 +349,7 @@ for serverInfo in sorted(a2sInfoArray, key = lambda x: x.ping, reverse=True):
         failedConnectCount += 1
 
 # Print summary
+if not(showPlayers) and not(isVerbose): print()
 print(
     "Total Players: " + str(totalPlayers) 
     + (" ({} showing, {} successful, {} failed, {} total)".format(resultTotal, successConnectCount, failedConnectCount, len(a2sInfoArray)))
