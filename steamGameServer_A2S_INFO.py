@@ -68,7 +68,7 @@ def getString(data, index):
 
     # Assemble string until null byte is found
     while data[index] != 0:
-        index = index + 1
+        index += 1
 
     # There are sometimes decoding issues, just move up the start index
     # until it can decode properly.
@@ -77,9 +77,9 @@ def getString(data, index):
             strFromBytes = str(data[startIndex:index], "utf-8")
             foundString = True
         except UnicodeDecodeError: 
-            startIndex = startIndex + 1
+            startIndex += 1
 
-    index = index + 1
+    index += 1
     return strFromBytes, index
 
 # Represents a single player information from A2S_PLAYER
@@ -190,7 +190,7 @@ class ValveA2SInfo:
     def getPlayerInfo(self):
         n = 0
         self.numPlayersFromA2SPlayer = self.playerData[self.pDataIndex]
-        self.pDataIndex = self.pDataIndex + 1
+        self.pDataIndex += 1
         while self.pDataIndex < len(self.playerData):
             self.objPlayers.append(ValveA2SPlayer())
             self.objPlayers[n].index = self.playerData[self.pDataIndex]
@@ -202,7 +202,7 @@ class ValveA2SInfo:
                 + (self.playerData[self.pDataIndex + 3] << 24)
             )
             self.pDataIndex = self.pDataIndex + 8
-            n = n + 1
+            n += 1
 
     def __str__(self):
         if self.connect:
@@ -250,7 +250,7 @@ for ipPort in sys.stdin:
     if len(ipPort) < 10 or ipPort[0] == "#": continue
     a2sInfoArray.append(ValveA2SInfo(ipPort))
     threads.append(threading.Thread(target=thread_a2sInfo_getMembers, args=(a2sInfoArray[i],)))
-    i = i + 1
+    i += 1
 
 # Launch threads
 for t in threads:
