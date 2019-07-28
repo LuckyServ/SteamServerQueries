@@ -24,7 +24,10 @@ import threading
 import time
 import argparse
 
+# Maximum number of threads to have alive at once
 MAX_THREAD_COUNT = 512
+
+# Error number for too many files (when too many threads are alive at once)
 TOO_MANY_OPEN_FILES = 24
 
 # Formatting
@@ -33,13 +36,13 @@ FIELD_SEP = " : "
 LJUST_VALUE = 11 
 maxNameLength = 10
 
-# A2S_INFO values from Valve documentation
+# A2S values from Valve documentation
 A2S_INFO = binascii.unhexlify("FFFFFFFF54536F7572636520456E67696E6520517565727900")
 A2S_INFO_START_INDEX = 6
-
 A2S_PLAYER = binascii.unhexlify("FFFFFFFF55FFFFFFFF")
 A2S_PLAYER_START_INDEX = 6
 
+# UPD packet parameters
 STEAM_PACKET_SIZE = 1400
 TIMEOUT = 0.3
 RETRIES = 5
@@ -306,8 +309,13 @@ searchPlayers = parsedArgs.player
 isVerbose = parsedArgs.verbose
 showPlayers = parsedArgs.showplayers
 
+# Invalid arguments combination
 if onlyEmpty and onlyActive:
-    print("Option -e (only empty) and -a (only active) can't be used together.")
+    print("Option -e (only empty) and -a (only active) can't be used together.", file=sys.stderr)
+    raise SystemExit
+
+if not(showPlayers) and searchPlayers != None:
+    print("Option --showplayers is required to search for players with --player", file=sys.stderr)
     raise SystemExit
 
 # Prepare threads
