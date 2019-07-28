@@ -230,7 +230,7 @@ class ValveA2SInfo:
                     + self.strServerIpPort.ljust(23)
                     + (str(int(self.ping)).rjust(3) + " ms").ljust(8)
                     + self.strMapName.ljust(maxMapLength)
-                    + str(self.numPlayers).ljust(4)
+                    + str(self.numPlayers).rjust(3)
                 )
             else:
                 s = (
