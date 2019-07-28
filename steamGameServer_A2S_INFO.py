@@ -307,15 +307,11 @@ onlyActive = parsedArgs.active
 searchNames = parsedArgs.name
 searchPlayers = parsedArgs.player
 isVerbose = parsedArgs.verbose
-showPlayers = parsedArgs.showplayers
+showPlayers = parsedArgs.showplayers or searchPlayers != None
 
 # Invalid arguments combination
 if onlyEmpty and onlyActive:
     print("Option -e (only empty) and -a (only active) can't be used together.", file=sys.stderr)
-    raise SystemExit
-
-if not(showPlayers) and searchPlayers != None:
-    print("Option --showplayers is required to search for players with --player", file=sys.stderr)
     raise SystemExit
 
 # Prepare threads
