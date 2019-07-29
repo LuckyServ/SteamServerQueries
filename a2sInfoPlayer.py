@@ -319,13 +319,19 @@ def thread_a2sInfo_getMembers(objA2sInfoArray):
 ##############
 
 # Arguments handling
+
+# ['name', 'ip', 'ping', 'map', 'playercount']
+SORT_FIELD_CHOICES = ['name', 'ip', 'ping', 'map', 'playercount']
+SORT_FIELD_ATTR = ['strServerName', 'strServerIpPort', 'ping', 'strMapName', 'numPlayers']
+
 parser = argparse.ArgumentParser(description="Make A2S_INFO and A2S_PLAYER requests to steam game servers.")
+
 parser.add_argument("-a", "--active", action='store_true', help="only show active servers")
 parser.add_argument("-e", "--empty", action='store_true', help="only show empty servers")
 parser.add_argument("-v", "--verbose", action='store_true', help="verbose information")
-parser.add_argument("-s", "--showplayers", action = 'store_true', help="show players")
+parser.add_argument("-s", "--showplayers", action='store_true', help="show players")
 parser.add_argument("-n", "--name", action='append', help="search for server name, accepts multiple values (disjunction)")
-parser.add_argument("-p", "--player", action = 'append', help="search for player, accepts multiple values (disjunction)")
+parser.add_argument("-p", "--player", action='append', help="search for player, accepts multiple values (disjunction)")
 parser.add_argument("-m", "--minplayer", type=int, help="minimum player count (inclusive)")
 parser.add_argument("-x", "--maxplayer", type=int, help="maximum player count (inclusive)")
 parser.add_argument("-t", "--timeout", type=float, help="timeout before retry (ms)", default=TIMEOUT)
@@ -333,6 +339,8 @@ parser.add_argument("-r", "--retry", type=int, help="request retry amount", defa
 parser.add_argument("-c", "--threadcount", type=int, help="max requests at once (MAX_THREAD_COUNT)", default=MAX_THREAD_COUNT)
 parser.add_argument("-o", "--outputfilesuccess", help="output destination file for successful connections")
 parser.add_argument("-f", "--outputfilefailed", help="output destination file for failed connections")
+parser.add_argument("--sort", help="sort by field", choices=SORT_FIELD_CHOICES, default="ping")
+parser.add_argument("--sortreverse", action='store_true', help="reverse sort", default=False)
 
 parsedArgs = parser.parse_args()
 
@@ -349,6 +357,8 @@ retry = parsedArgs.retry
 maxThreadCount = parsedArgs.threadcount
 outputFileSuccess = parsedArgs.outputfilesuccess
 outputFileFailed = parsedArgs.outputfilefailed
+sortBy = parsedArgs.sort
+sortReverse = parsedArgs.sortreverse
 
 # Invalid arguments combination
 invalidArgs = False
@@ -405,7 +415,8 @@ successConnectCount = 0
 resultShowing = 0
 failedConnectList = []
 successfulConnectList = []
-for serverInfo in sorted(a2sInfoArray, key = lambda x: x.ping, reverse=True):
+for serverInfo in (sorted(a2sInfoArray, 
+        key = lambda x: getattr(x, SORT_FIELD_ATTR[SORT_FIELD_CHOICES.index(sortBy)]), reverse=sortReverse)):
     if serverInfo.connect:
         successConnectCount += 1
         successfulConnectList.append(serverInfo.strServerIpPort)
@@ -436,3 +447,5 @@ if outputFileSuccess != None and successConnectCount > 0:
     for ipPort in successfulConnectList:
         f.write(ipPort +"\n")
     f.close()
+
+sys.exit(4)
