@@ -157,7 +157,8 @@ class ValveA2SInfo:
                     # Get player list
                     sock.sendto(A2S_PLAYER, (ipPortSplit[0], int(ipPortSplit[1])))
                     rawPlayerData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
-                    sock.sendto(bytearray(binascii.unhexlify("FFFFFFFF55")) + bytearray(rawPlayerData)[5:], (ipPortSplit[0], int(ipPortSplit[1])))
+                    sock.sendto(bytearray(binascii.unhexlify("FFFFFFFF55")) 
+                        + bytearray(rawPlayerData)[5:], (ipPortSplit[0], int(ipPortSplit[1])))
                     rawPlayerData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
 
                     self.playerData = bytearray(rawPlayerData)
@@ -300,7 +301,9 @@ class ValveA2SInfo:
 
             if playerFound:
                 for player in self.objPlayers:
-                    playerFound = True in map(lambda argPlayer: argPlayer.lower() in player.name.lower(), searchPlayers)
+                    playerFound = (
+                        True in map(lambda argPlayer: argPlayer.lower() in player.name.lower(), searchPlayers)
+                    )
                     if playerFound: break
 
             p = p and playerFound
@@ -384,7 +387,10 @@ for i in range(0, maxThreadCount):
         endIndex = len(a2sInfoArray)
     else:
         endIndex = int(min(a2sInfoPerThread * (i + 1), len(a2sInfoArray)))
-    threads.append(threading.Thread(target=thread_a2sInfo_getMembers, args=(a2sInfoArray[beginIndex:endIndex],)))
+    threads.append(
+        threading.Thread(target=thread_a2sInfo_getMembers, 
+        args=(a2sInfoArray[beginIndex:endIndex],))
+    )
 
 # Launch threads
 for t in threads:
@@ -415,7 +421,8 @@ for serverInfo in sorted(a2sInfoArray, key = lambda x: x.ping, reverse=True):
 if not(showPlayers) and not(isVerbose): print()
 print(
     "Total Players: " + str(totalPlayers) 
-    + (" ({} showing, {} successful, {} failed, {} total)".format(resultShowing, successConnectCount, failedConnectCount, len(a2sInfoArray)))
+    + (" ({} showing, {} successful, {} failed, {} total)"
+    .format(resultShowing, successConnectCount, failedConnectCount, len(a2sInfoArray)))
 )
 
 # Write failed and successful connections to file
