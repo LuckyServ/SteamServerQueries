@@ -319,9 +319,7 @@ def thread_a2sInfo_getMembers(objA2sInfoArray):
 ##############
 
 # Arguments handling
-
-# ['name', 'ip', 'ping', 'map', 'playercount']
-SORT_FIELD_CHOICES = ['name', 'ip', 'ping', 'map', 'playercount']
+SORT_FIELD_CHOICES = ['name', 'ip', 'ping', 'map', 'player']
 SORT_FIELD_ATTR = ['strServerName', 'strServerIpPort', 'ping', 'strMapName', 'numPlayers']
 
 parser = argparse.ArgumentParser(description=(
