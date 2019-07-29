@@ -13,4 +13,4 @@ do
     names="$names -p $arg"
 done
 
-python3 steamGameServer_A2S_INFO.py -sa $names < compList
+eval "python3 steamGameServer_A2S_INFO.py -sa $names < compList"
