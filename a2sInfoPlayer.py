@@ -324,7 +324,11 @@ def thread_a2sInfo_getMembers(objA2sInfoArray):
 SORT_FIELD_CHOICES = ['name', 'ip', 'ping', 'map', 'playercount']
 SORT_FIELD_ATTR = ['strServerName', 'strServerIpPort', 'ping', 'strMapName', 'numPlayers']
 
-parser = argparse.ArgumentParser(description="Make A2S_INFO and A2S_PLAYER requests to steam game servers.")
+parser = argparse.ArgumentParser(description=(
+        "Make A2S_INFO and A2S_PLAYER requests to steam game servers. "
+        + "The ip:port list is read from stdin."
+    )
+)
 
 parser.add_argument("-a", "--active", action='store_true', help="only show active servers")
 parser.add_argument("-e", "--empty", action='store_true', help="only show empty servers")
