@@ -302,8 +302,9 @@ class ValveA2SInfo:
 
         return p
 
-def thread_a2sInfo_getMembers(objA2sInfo):
-    objA2sInfo.getMembers()
+def thread_a2sInfo_getMembers(objA2sInfoArray):
+    for sInfo in objA2sInfoArray:
+        sInfo.getMembers()
 
 ##############
 # SCRIPT START
@@ -358,29 +359,32 @@ if maxThreadCount <= 0:
 if invalidArgs:
     raise SystemExit
 
-# Prepare threads
-totalPlayers = 0
-i = 0
+# Prepare a2sInfoArray
 a2sInfoArray = []
-threads = []
 for ipPort in sys.stdin:
     ipPort = ipPort.strip()
     if len(ipPort) < 10 or ipPort[0] == "#": continue
     a2sInfoArray.append(ValveA2SInfo(ipPort))
-    threads.append(threading.Thread(target=thread_a2sInfo_getMembers, args=(a2sInfoArray[i],)))
-    i += 1
+
+# Make threads and assign them a2sInfoPerThread
+threads = []
+a2sInfoPerThread = len(a2sInfoArray) / maxThreadCount
+for i in range(0, maxThreadCount):
+    beginIndex = int(a2sInfoPerThread * i)
+    if i == maxThreadCount -1:
+        endIndex = len(a2sInfoArray)
+    else:
+        endIndex = int(min(a2sInfoPerThread * (i + 1), len(a2sInfoArray)))
+    threads.append(threading.Thread(target=thread_a2sInfo_getMembers, args=(a2sInfoArray[beginIndex:endIndex],)))
 
 # Launch threads
-for i,t in enumerate(threads):
+for t in threads:
     t.start()
-
-    # Don't start too many threads, wait for ones previously opened.
-    if i >= maxThreadCount:
-        threads[i - maxThreadCount].join()
 for t in threads:
     t.join()
 
 # Print server information
+totalPlayers = 0
 failedConnectCount = 0
 successConnectCount = 0
 resultShowing = 0
@@ -412,7 +416,7 @@ if failedConnectCount > 0:
         f.write(ipPort + "\n")
     f.close()
 if successConnectCount > 0:
-    f = open("successfulConnections", "w")
+    f = open("connections", "w")
     for ipPort in successfulConnectList:
         f.write(ipPort +"\n")
     f.close()
