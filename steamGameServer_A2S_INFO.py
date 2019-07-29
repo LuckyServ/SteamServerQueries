@@ -49,7 +49,7 @@ A2S_PLAYER_START_INDEX = 5
 STEAM_PACKET_SIZE = 1400
 
 # These can be ajusted through command line arguments
-TIMEOUT = 0.25
+TIMEOUT = 0.3
 RETRY = 2
 
 # Gets string from data starting from index.
