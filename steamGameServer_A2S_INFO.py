@@ -27,7 +27,7 @@ import time
 import argparse
 
 # Maximum number of threads alive at once
-MAX_THREAD_COUNT = 800
+MAX_THREAD_COUNT = 32
 
 # Error number for too many files (when too many threads are alive at once)
 TOO_MANY_OPEN_FILES = 24
@@ -49,8 +49,8 @@ A2S_PLAYER_START_INDEX = 5
 STEAM_PACKET_SIZE = 1400
 
 # These can be ajusted through command line arguments
-TIMEOUT = 0.3
-RETRY = 2
+TIMEOUT = 300
+RETRY = 1
 
 # Gets string from data starting from index.
 #
@@ -135,7 +135,7 @@ class ValveA2SInfo:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
                 # Don't wait forever for a response
-                sock.settimeout(timeout)
+                sock.settimeout(timeout / 1000)
 
                 # Calculate start time (for ping)
                 startTime = time.time()
@@ -320,7 +320,7 @@ parser.add_argument("-n", "--name", action='append', help="search for server nam
 parser.add_argument("-p", "--player", action = 'append', help="search for player, accepts multiple values (disjunction)")
 parser.add_argument("-m", "--minplayer", type=int, help="minimum player count (inclusive)")
 parser.add_argument("-x", "--maxplayer", type=int, help="maximum player count (inclusive)")
-parser.add_argument("-t", "--timeout", type=float, help="timeout before retry", default=TIMEOUT)
+parser.add_argument("-t", "--timeout", type=float, help="timeout before retry (ms)", default=TIMEOUT)
 parser.add_argument("-r", "--retry", type=int, help="request retry amount", default=RETRY)
 parser.add_argument("-c", "--threadcount", type=int, help="max requests at once (MAX_THREAD_COUNT)", default=MAX_THREAD_COUNT)
 
@@ -334,9 +334,14 @@ isVerbose = parsedArgs.verbose
 showPlayers = parsedArgs.showplayers or searchPlayers != None
 minPlayerCount = parsedArgs.minplayer
 maxPlayerCount = parsedArgs.maxplayer
-timeout = parsedArgs.timeout 
+timeout = parsedArgs.timeout
 retry = parsedArgs.retry
 maxThreadCount = parsedArgs.threadcount
+
+# Allow a lot more connections than default values, requires sudo
+if maxThreadCount > 800:
+    import resource
+    resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
 
 # Invalid arguments combination
 invalidArgs = False
