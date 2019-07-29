@@ -351,6 +351,10 @@ if retry <= 0:
     print("Option --retry must be positive.", file=sys.stderr)
     invalidArgs = True
 
+if maxThreadCount <= 0:
+    print("Option --threadcount must be positive.", file=sys.stderr)
+    invalidArgs = True
+
 if invalidArgs:
     raise SystemExit
 
