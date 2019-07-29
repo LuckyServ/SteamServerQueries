@@ -5,23 +5,20 @@ has only been tested on competitive L4D2 servers.
 
 ## a
 
-Bash script that filters for active servers. First argument filters
-by server name.  
+Bash script that filters by name for active servers.
 
 Example usage 1: ``` ./a sirplease aurora```  
 Example usage 2: ``` ./a ny```
 
 ## e
 
-Bash script that filters for empty servers. First argument filters by
-server name.  
+Bash script that filters by name for empty servers.
 
 Example usage 1: ``` ./a sirplease aurora```  
 Example usage 2: ``` ./a ny```
 
 ## p
 
-Bash script that searches for a player. First argument is the search parameter
-for the player name.
+Bash script that searches for a list of players.
 
 Example usage: ``` ./p luckylock bob john```
