@@ -1,0 +1,12 @@
+#!/bin/bash
+#
+# Utility script to grab the consistently failing (or consistently successful) connections
+#
+# Author: Luckylock
+
+for i in {1..100}:
+do
+    #./steamGameServer_A2S_INFO.py < successfulConnections &
+    ./steamGameServer_A2S_INFO.py < failedConnections &
+    wait
+done

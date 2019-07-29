@@ -385,9 +385,11 @@ failedConnectCount = 0
 successConnectCount = 0
 resultShowing = 0
 failedConnectList = []
+successfulConnectList = []
 for serverInfo in sorted(a2sInfoArray, key = lambda x: x.ping, reverse=True):
     if serverInfo.connect:
         successConnectCount += 1
+        successfulConnectList.append(serverInfo.strServerIpPort)
         if serverInfo.numPlayers >= 0 and serverInfo.shouldPrint(): 
             resultShowing += 1
             totalPlayers = totalPlayers + serverInfo.numPlayers
@@ -403,9 +405,14 @@ print(
     + (" ({} showing, {} successful, {} failed, {} total)".format(resultShowing, successConnectCount, failedConnectCount, len(a2sInfoArray)))
 )
 
-# Write failed ip:port to file
+# Write failed and successful connections to file
 if failedConnectCount > 0:
     f = open("failedConnections", "w")
     for ipPort in failedConnectList:
         f.write(ipPort + "\n")
+    f.close()
+if successConnectCount > 0:
+    f = open("successfulConnections", "w")
+    for ipPort in successfulConnectList:
+        f.write(ipPort +"\n")
     f.close()
