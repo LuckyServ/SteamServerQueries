@@ -4,4 +4,4 @@
 # 
 # Author: Luckylock
 
-./steamGameServer_A2S_INFO.py < masterServersListLowPing -m 5 -x 7 -n valve -t 80
+./a2sInfoPlayer.py < serverlist/masterServersListLowPing -m 5 -x 7 -n valve -t 80

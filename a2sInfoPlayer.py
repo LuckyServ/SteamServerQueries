@@ -164,10 +164,15 @@ class ValveA2SInfo:
                     self.getPlayerInfo()
 
                 self.connect = True
-                sock.close
+                sock.close()
             except socket.error as e:
                 if e.errno == TOO_MANY_OPEN_FILES:
-                    print("Too many threads, reduce the max thread count with option --threadcount. Current value is {}.".format(maxThreadCount), file=sys.stderr)
+                    print(
+                        "Too many threads, reduce the max thread count with "
+                        + "option --threadcount or increase max open files "
+                        + "(ulimit -n). Current threadcount value is {}."
+                        .format(maxThreadCount), file=sys.stderr
+                    )
                 elif "timed out" not in str(e) and "service not know" not in str(e):
                     print(str(e), file=sys.stderr)
                 self.connect = False
@@ -323,6 +328,8 @@ parser.add_argument("-x", "--maxplayer", type=int, help="maximum player count (i
 parser.add_argument("-t", "--timeout", type=float, help="timeout before retry (ms)", default=TIMEOUT)
 parser.add_argument("-r", "--retry", type=int, help="request retry amount", default=RETRY)
 parser.add_argument("-c", "--threadcount", type=int, help="max requests at once (MAX_THREAD_COUNT)", default=MAX_THREAD_COUNT)
+parser.add_argument("-o", "--outputfilesuccess", help="output destination file for successful connections")
+parser.add_argument("-f", "--outputfilefailed", help="output destination file for failed connections")
 
 parsedArgs = parser.parse_args()
 
@@ -337,11 +344,8 @@ maxPlayerCount = parsedArgs.maxplayer
 timeout = parsedArgs.timeout
 retry = parsedArgs.retry
 maxThreadCount = parsedArgs.threadcount
-
-# Allow a lot more connections than default values, requires sudo
-if maxThreadCount > 800:
-    import resource
-    resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
+outputFileSuccess = parsedArgs.outputfilesuccess
+outputFileFailed = parsedArgs.outputfilefailed
 
 # Invalid arguments combination
 invalidArgs = False
@@ -415,13 +419,13 @@ print(
 )
 
 # Write failed and successful connections to file
-if failedConnectCount > 0:
-    f = open("failedConnections", "w")
+if outputFileFailed != None and failedConnectCount > 0:
+    f = open(outputFileFailed, "w")
     for ipPort in failedConnectList:
         f.write(ipPort + "\n")
     f.close()
-if successConnectCount > 0:
-    f = open("connections", "w")
+if outputFileSuccess != None and successConnectCount > 0:
+    f = open(outputFileSuccess, "w")
     for ipPort in successfulConnectList:
         f.write(ipPort +"\n")
     f.close()

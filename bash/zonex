@@ -4,4 +4,4 @@
 # 
 # Author: Luckylock
 
-./steamGameServer_A2S_INFO.py < compList -san 'zone :x:'
+./a2sInfoPlayer.py < serverlist/compList -san 'zone :x:'
