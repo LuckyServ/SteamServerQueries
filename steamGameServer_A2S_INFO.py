@@ -26,8 +26,8 @@ import threading
 import time
 import argparse
 
-# Maximum number of threads to have alive at once
-MAX_THREAD_COUNT = 512
+# Maximum number of threads alive at once
+MAX_THREAD_COUNT = 800
 
 # Error number for too many files (when too many threads are alive at once)
 TOO_MANY_OPEN_FILES = 24
@@ -47,8 +47,10 @@ A2S_PLAYER_START_INDEX = 5
 
 # UPD packet parameters
 STEAM_PACKET_SIZE = 1400
-TIMEOUT = 0.3
-RETRIES = 5
+
+# These can be ajusted through command line arguments
+TIMEOUT = 0.25
+RETRY = 2
 
 # Gets string from data starting from index.
 #
@@ -121,7 +123,7 @@ class ValveA2SInfo:
         socketRetries = 0
         
         # UDP packets can be unreliable, so request as many times as needed.
-        while not(self.connect) and socketRetries < RETRIES:
+        while not(self.connect) and socketRetries < retry:
             socketRetries += 1
             self.initialise()
 
@@ -133,7 +135,7 @@ class ValveA2SInfo:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
                 # Don't wait forever for a response
-                sock.settimeout(TIMEOUT)
+                sock.settimeout(timeout)
 
                 # Calculate start time (for ping)
                 startTime = time.time()
@@ -165,7 +167,7 @@ class ValveA2SInfo:
                 sock.close
             except socket.error as e:
                 if e.errno == TOO_MANY_OPEN_FILES:
-                    print("Too many threads, reduce MAX_THREAD_COUNT.", file=sys.stderr)
+                    print("Too many threads, reduce the max thread count with option --threadcount. Current value is {}.".format(maxThreadCount), file=sys.stderr)
                 elif "timed out" not in str(e) and "service not know" not in str(e):
                     print(str(e), file=sys.stderr)
                 self.connect = False
@@ -317,6 +319,10 @@ parser.add_argument("-n", "--name", action='append', help="search for server nam
 parser.add_argument("-p", "--player", action = 'append', help="search for player")
 parser.add_argument("-m", "--minplayer", type=int, help="minimum player count (inclusive)")
 parser.add_argument("-x", "--maxplayer", type=int, help="maximum player count (inclusive)")
+parser.add_argument("-t", "--timeout", type=float, help="timeout before retry", default=TIMEOUT)
+parser.add_argument("-r", "--retry", type=int, help="request retry amount", default=RETRY)
+parser.add_argument("-c", "--threadcount", type=int, help="max requests at once (MAX_THREAD_COUNT)", default=MAX_THREAD_COUNT)
+
 parsedArgs = parser.parse_args()
 
 onlyEmpty = parsedArgs.empty
@@ -327,10 +333,25 @@ isVerbose = parsedArgs.verbose
 showPlayers = parsedArgs.showplayers or searchPlayers != None
 minPlayerCount = parsedArgs.minplayer
 maxPlayerCount = parsedArgs.maxplayer
+timeout = parsedArgs.timeout 
+retry = parsedArgs.retry
+maxThreadCount = parsedArgs.threadcount
 
 # Invalid arguments combination
+invalidArgs = False
 if onlyEmpty and onlyActive:
-    print("Option -e (only empty) and -a (only active) can't be used together.", file=sys.stderr)
+    print("Option --empty and --active can't be used together.", file=sys.stderr)
+    invalidArgs = True
+
+if timeout <= 0:
+    print("Option --timeout must be positive.", file=sys.stderr) 
+    invalidArgs = True
+
+if retry <= 0:
+    print("Option --retry must be positive.", file=sys.stderr)
+    invalidArgs = True
+
+if invalidArgs:
     raise SystemExit
 
 # Prepare threads
@@ -350,8 +371,8 @@ for i,t in enumerate(threads):
     t.start()
 
     # Don't start too many threads, wait for ones previously opened.
-    if i >= MAX_THREAD_COUNT:
-        threads[i - MAX_THREAD_COUNT].join()
+    if i >= maxThreadCount:
+        threads[i - maxThreadCount].join()
 for t in threads:
     t.join()
 
