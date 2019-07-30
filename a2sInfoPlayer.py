@@ -177,6 +177,7 @@ class ValveA2SInfo:
                 elif "timed out" not in str(e) and "service not know" not in str(e):
                     print(str(e), file=sys.stderr)
                 self.connect = False
+                sock.close()
 
     # Gets the string variables from the data
     def getStrings(self):
@@ -343,6 +344,7 @@ parser.add_argument("-o", "--outputfilesuccess", help="output destination file f
 parser.add_argument("-f", "--outputfilefailed", help="output destination file for failed connections")
 parser.add_argument("--sort", help="sort by field", choices=SORT_FIELD_CHOICES, default="ping")
 parser.add_argument("--sortreverse", action='store_true', help="reverse sort", default=False)
+parser.add_argument("--printestimate", action='store_true', help="prints an estimate of how long the script will run", default=False)
 
 parsedArgs = parser.parse_args()
 
@@ -361,6 +363,7 @@ outputFileSuccess = parsedArgs.outputfilesuccess
 outputFileFailed = parsedArgs.outputfilefailed
 sortBy = parsedArgs.sort
 sortReverse = parsedArgs.sortreverse
+printEstimate = parsedArgs.printestimate
 
 # Invalid arguments combination
 invalidArgs = False
@@ -389,6 +392,16 @@ for ipPort in sys.stdin:
     ipPort = ipPort.strip()
     if len(ipPort) < 10 or ipPort[0] == "#": continue
     a2sInfoArray.append(ValveA2SInfo(ipPort))
+
+# Print how much time it will take to process
+if printEstimate:
+    processTime = len(a2sInfoArray) / maxThreadCount * (timeout / 1000)
+    print(
+        "Sending {} requests, it will take about {} seconds...\n"
+        .format(len(a2sInfoArray), round(processTime, 2))
+    )
+
+startTime = time.time()
 
 # Make threads and assign them a2sInfoPerThread
 threads = []
@@ -430,14 +443,6 @@ for serverInfo in (sorted(a2sInfoArray,
         failedConnectList.append(serverInfo.strServerIpPort)
         failedConnectCount += 1
 
-# Print summary
-if not(showPlayers) and not(isVerbose): print()
-print(
-    "Total Players: " + str(totalPlayers) 
-    + (" ({} showing, {} successful, {} failed, {} total)"
-    .format(resultShowing, successConnectCount, failedConnectCount, len(a2sInfoArray)))
-)
-
 # Write failed and successful connections to file
 if outputFileFailed != None and failedConnectCount > 0:
     f = open(outputFileFailed, "w")
@@ -450,4 +455,13 @@ if outputFileSuccess != None and successConnectCount > 0:
         f.write(ipPort +"\n")
     f.close()
 
-sys.exit(4)
+endTime = time.time()
+totalTime = "{} seconds".format(round(endTime - startTime, 2))
+
+# Print summary
+if not(showPlayers) and not(isVerbose): print()
+print(
+    "Total Players: " + str(totalPlayers) 
+    + (" ({} showing, {} successful, {} failed, {} total) in {}"
+    .format(resultShowing, successConnectCount, failedConnectCount, len(a2sInfoArray), totalTime))
+)
