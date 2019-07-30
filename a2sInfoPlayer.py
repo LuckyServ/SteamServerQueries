@@ -147,6 +147,8 @@ class ValveA2SInfo:
                 # Get answer from server
                 rawInfoData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
 
+                if "{}:{}".format(addr[0], addr[1]) != self.strServerIpPort: continue
+
                 self.ping = (time.time() - startTime) * 1000
                 
                 # Done
@@ -398,7 +400,7 @@ for ipPort in sys.stdin:
 
 # Print how much time it will take to process
 if printEstimate:
-    processTime = len(a2sInfoArray) / maxThreadCount * (timeout / 1000)
+    processTime = len(a2sInfoArray) / maxThreadCount * (timeout / 1000) * retry
     print(
         "Sending {} requests, it will take about {} seconds...\n"
         .format(len(a2sInfoArray), round(processTime, 2))
