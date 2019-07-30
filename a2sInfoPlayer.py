@@ -25,6 +25,7 @@ import binascii
 import threading
 import time
 import argparse
+import re
 
 # Maximum number of threads alive at once
 MAX_THREAD_COUNT = 32
@@ -175,7 +176,7 @@ class ValveA2SInfo:
                         .format(maxThreadCount), file=sys.stderr
                     )
                 elif "timed out" not in str(e) and "service not know" not in str(e):
-                    print(str(e), file=sys.stderr)
+                    print("{} : {}".format(str(e), self.strServerIpPort), file=sys.stderr)
                 self.connect = False
                 sock.close()
 
@@ -390,8 +391,10 @@ if invalidArgs:
 a2sInfoArray = []
 for ipPort in sys.stdin:
     ipPort = ipPort.strip()
-    if len(ipPort) < 10 or ipPort[0] == "#": continue
-    a2sInfoArray.append(ValveA2SInfo(ipPort))
+
+    # Basic IP:PORT validation
+    if re.search("^(([0-9]{1,3})\.){3}[0-9]{1,3}:[0-9]{1,5}$", ipPort) != None:
+        a2sInfoArray.append(ValveA2SInfo(ipPort))
 
 # Print how much time it will take to process
 if printEstimate:
