@@ -279,7 +279,8 @@ class ValveA2SInfo:
             )
 
         return s
-    
+   
+    # Determines if self should print based on cli.
     def shouldPrint(self):
         # Only active and active logic
         p = (
@@ -317,9 +318,22 @@ class ValveA2SInfo:
 
         return p
 
+# Handler function to call for each thread.
+#
+# objA2sInfoArray array of A2s objects to process
 def thread_a2sInfo_getMembers(objA2sInfoArray):
     for sInfo in objA2sInfoArray:
         sInfo.getMembers()
+
+# Write to output file the iplist passed in.
+#
+# @outputFile the destination output file name
+# @ipList the list of ip:port
+def writeOutputFile(outputFile, ipList):
+    f = open(outputFile, "w")
+    for ipPort in ipList:
+        f.write(ipPort + "\n")
+    f.close()
 
 ##############
 # SCRIPT START
@@ -352,8 +366,6 @@ parser.add_argument("-w", "--outputfileshow", help="output destination file for 
 parser.add_argument("--sort", help="sort by field", choices=SORT_FIELD_CHOICES, default="ping")
 parser.add_argument("--sortreverse", action='store_true', help="reverse sort", default=False)
 parser.add_argument("--printestimate", action='store_true', help="prints an estimate of how long the script will run", default=False)
-#if outputFileShow != None And showConnectCount > 0:
-#    writeOutputFile(outputFileShow, showConnectList)
 
 parsedArgs = parser.parse_args()
 
@@ -445,6 +457,7 @@ successfulConnectList = []
 showConnectList = []
 for serverInfo in (sorted(a2sInfoArray, 
         key = lambda x: getattr(x, SORT_FIELD_ATTR[SORT_FIELD_CHOICES.index(sortBy)]), reverse=sortReverse)):
+
     if serverInfo.connect:
         successConnectCount += 1
         successfulConnectList.append(serverInfo.strServerIpPort)
@@ -456,13 +469,6 @@ for serverInfo in (sorted(a2sInfoArray,
     else:
         failedConnectList.append(serverInfo.strServerIpPort)
         failedConnectCount += 1
-
-
-def writeOutputFile(outputFile, ipList):
-    f = open(outputFile, "w")
-    for ipPort in ipList:
-        f.write(ipPort + "\n")
-    f.close()
 
 # Write ip:port results to files
 if outputFileFailed != None and failedConnectCount > 0:
