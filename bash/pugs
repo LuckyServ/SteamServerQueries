@@ -1,1 +1,1 @@
-watch -n 8 "./a2sInfoPlayer.py < serverlist/compList --active --sort name --showplayers --name '| zonemod'"
+watch -n 8 "./a2sInfoPlayer.py < serverlist/compList --active --sort name --showplayers --name '| zonemod'" -r 2

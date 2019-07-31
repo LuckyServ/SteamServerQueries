@@ -147,7 +147,10 @@ class ValveA2SInfo:
                 # Get answer from server
                 rawInfoData, addr = sock.recvfrom(STEAM_PACKET_SIZE)
 
-                if "{}:{}".format(addr[0], addr[1]) != self.strServerIpPort: continue
+                # We got data from another IP:PORT, this one doesn't count
+                if "{}:{}".format(addr[0], addr[1]) != self.strServerIpPort: 
+                    socketRetries -= 1
+                    continue
 
                 self.ping = (time.time() - startTime) * 1000
                 
@@ -345,9 +348,12 @@ parser.add_argument("-r", "--retry", type=int, help="request retry amount", defa
 parser.add_argument("-c", "--threadcount", type=int, help="max requests at once (MAX_THREAD_COUNT)", default=MAX_THREAD_COUNT)
 parser.add_argument("-o", "--outputfilesuccess", help="output destination file for successful connections")
 parser.add_argument("-f", "--outputfilefailed", help="output destination file for failed connections")
+parser.add_argument("-w", "--outputfileshow", help="output destination file for showing connections")
 parser.add_argument("--sort", help="sort by field", choices=SORT_FIELD_CHOICES, default="ping")
 parser.add_argument("--sortreverse", action='store_true', help="reverse sort", default=False)
 parser.add_argument("--printestimate", action='store_true', help="prints an estimate of how long the script will run", default=False)
+#if outputFileShow != None And showConnectCount > 0:
+#    writeOutputFile(outputFileShow, showConnectList)
 
 parsedArgs = parser.parse_args()
 
@@ -364,6 +370,7 @@ retry = parsedArgs.retry
 maxThreadCount = parsedArgs.threadcount
 outputFileSuccess = parsedArgs.outputfilesuccess
 outputFileFailed = parsedArgs.outputfilefailed
+outputFileShow = parsedArgs.outputfileshow
 sortBy = parsedArgs.sort
 sortReverse = parsedArgs.sortreverse
 printEstimate = parsedArgs.printestimate
@@ -432,33 +439,38 @@ for t in threads:
 totalPlayers = 0
 failedConnectCount = 0
 successConnectCount = 0
-resultShowing = 0
+showConnectCount = 0
 failedConnectList = []
 successfulConnectList = []
+showConnectList = []
 for serverInfo in (sorted(a2sInfoArray, 
         key = lambda x: getattr(x, SORT_FIELD_ATTR[SORT_FIELD_CHOICES.index(sortBy)]), reverse=sortReverse)):
     if serverInfo.connect:
         successConnectCount += 1
         successfulConnectList.append(serverInfo.strServerIpPort)
         if serverInfo.numPlayers >= 0 and serverInfo.shouldPrint(): 
-            resultShowing += 1
+            showConnectCount += 1
+            showConnectList.append(serverInfo.strServerIpPort)
             totalPlayers = totalPlayers + serverInfo.numPlayers
             print(serverInfo)
     else:
         failedConnectList.append(serverInfo.strServerIpPort)
         failedConnectCount += 1
 
-# Write failed and successful connections to file
-if outputFileFailed != None and failedConnectCount > 0:
-    f = open(outputFileFailed, "w")
-    for ipPort in failedConnectList:
+
+def writeOutputFile(outputFile, ipList):
+    f = open(outputFile, "w")
+    for ipPort in ipList:
         f.write(ipPort + "\n")
     f.close()
+
+# Write ip:port results to files
+if outputFileFailed != None and failedConnectCount > 0:
+    writeOutputFile(outputFileFailed, failedConnectList)
 if outputFileSuccess != None and successConnectCount > 0:
-    f = open(outputFileSuccess, "w")
-    for ipPort in successfulConnectList:
-        f.write(ipPort +"\n")
-    f.close()
+    writeOutputFile(outputFileSuccess, successfulConnectList)
+if outputFileShow != None and showConnectCount > 0:
+    writeOutputFile(outputFileShow, showConnectList)
 
 endTime = time.time()
 totalTime = "{} seconds".format(round(endTime - startTime, 2))
@@ -468,5 +480,5 @@ if not(showPlayers) and not(isVerbose): print()
 print(
     "Total Players: " + str(totalPlayers) 
     + (" ({} showing, {} successful, {} failed, {} total) in {}"
-    .format(resultShowing, successConnectCount, failedConnectCount, len(a2sInfoArray), totalTime))
+    .format(showConnectCount, successConnectCount, failedConnectCount, len(a2sInfoArray), totalTime))
 )
