@@ -358,7 +358,7 @@ parser.add_argument("-f", "--outputfilefailed", help="output destination file fo
 parser.add_argument("-w", "--outputfileshow", help="output destination file for showing connections")
 parser.add_argument("--sort", help="sort by field", choices=SORT_FIELD_CHOICES, default="ping")
 parser.add_argument("--sortreverse", action='store_true', help="reverse sort", default=False)
-parser.add_argument("--printestimate", action='store_true', help="prints an estimate of how long the script will run", default=False)
+parser.add_argument("--printestimate", action='store_true', help="prints an execution time estimate", default=False)
 
 parsedArgs = parser.parse_args()
 

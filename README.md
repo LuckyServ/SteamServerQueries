@@ -83,7 +83,7 @@ optional arguments:
   --sort {name,ip,ping,map,player}
                         sort by field
   --sortreverse         reverse sort
-  --printestimate       prints an estimate of how long the script will run
+  --printestimate       prints an execution time estimate
 ```
 Increasing `--threadcount` improves performance but can easily overload your network card if the value is too high. You will get more failed connections because of dropped UDP packets. Increasing `--retry` to 2 (default is 1 try) will increase reliability but also increase execution time and load on the network card. The `--timeout` option can also be viewed as a maximum ping filter.
 
