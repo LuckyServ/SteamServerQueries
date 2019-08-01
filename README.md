@@ -1,15 +1,17 @@
 # Steam Game Server Queries
 
+## Description
+
 This Python script is a command line tool that reads a list of IP:PORT Steam 
 servers from `stdin` and outputs information about the servers in a pretty format.
 
-Read more about **A2S_INFO** and **A2S_PLAYER** at [Valve's Server queries wiki]
-(https://developer.valvesoftware.com/wiki/Server_queries).
+Read more about **A2S_INFO** and **A2S_PLAYER** at [Valve's Server queries wiki](https://developer.valvesoftware.com/wiki/Server_queries).
 
-To get started, just clone the repository. A list of [Left 4 Dead 2]
-(https://store.steampowered.com/app/550/Left_4_Dead_2/) servers is provided
-in the [serverList](https://github.com/LuckyServ/SteamServerQueries/tree/master/serverlist)
-directory. Since the script reads from stdin, just redirect your list of IP:PORT like so:
+## Get Started
+
+To get started, just clone the repository. A list of [Left 4 Dead 2](https://store.steampowered.com/app/550/Left_4_Dead_2) servers is provided in the [serverList](https://github.com/LuckyServ/SteamServerQueries/tree/master/serverlist) directory. 
+
+Since the script reads from stdin, just redirect your list of IP:PORT like so:
 
 ```bash
  $ ./a2sInfoPlayer.py < serverlist/compList 
@@ -34,7 +36,9 @@ The server list file must respect the IP:PORT format, for example:
 ```
 
 Any line that doesn't match what an IP:PORT should look like is ignored.  
-    
+
+## Advanced usage
+
 There are many command line options available, here's the help page:
   
 ```bash
@@ -81,6 +85,9 @@ optional arguments:
   --sortreverse         reverse sort
   --printestimate       prints an estimate of how long the script will run
 ```
+Increasing `--threadcount` improves performance but can easily overload your network card if the value is too high. You will get more failed connections because of dropped UDP packets. Increasing `--retry` to 2 (default is 1 try) will increase reliability but also increase execution time and load on the network card. The `--timeout` option can also be viewed as a maximum ping filter.
+
+## Helper scripts
 
 Finally, the [bash](https://github.com/LuckyServ/SteamServerQueries/tree/master/bash)
 directory contains quick one liner bash commands that I use frequently.
