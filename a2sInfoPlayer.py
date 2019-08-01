@@ -239,22 +239,15 @@ class ValveA2SInfo:
 
     def __str__(self):
         if self.connect:
-            if not(showPlayers) and not(isVerbose):
-                s = (
-                    self.strServerName.ljust(maxNameLength)
-                    + self.strServerIpPort.ljust(23)
-                    + (str(int(self.ping)).rjust(3) + " ms").ljust(8)
-                    + self.strMapName.ljust(maxMapLength)
-                    + str(self.numPlayers).rjust(3)
-                )
-            else:
-                s = (
-                    "Name".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerName + "\n"
-                    + "Server".ljust(LJUST_VALUE) + FIELD_SEP + self.strServerIpPort + "\n" 
-                    + "Ping".ljust(LJUST_VALUE) + FIELD_SEP + str(int(self.ping)) + " ms" + "\n"
-                    + "Map".ljust(LJUST_VALUE) + FIELD_SEP + self.strMapName + "\n"
-                    + "Players".ljust(LJUST_VALUE) + FIELD_SEP + str(self.numPlayers) + "\n"
-                )
+            s = (
+                self.strServerName.ljust(maxNameLength)
+                + self.strServerIpPort.ljust(23)
+                + (str(int(self.ping)).rjust(3) + " ms").ljust(8)
+                + self.strMapName.ljust(maxMapLength)
+                + str(self.numPlayers).rjust(3)
+            )
+
+            if showPlayers: s += "\n"
 
             if isVerbose:
                 s += (

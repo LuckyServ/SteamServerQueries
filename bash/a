@@ -13,4 +13,4 @@ do
     names="$names -n '$arg' "
 done
 
-eval "python3 a2sInfoPlayer.py -c 80 -a $names < serverlist/compList"
+eval "python3 a2sInfoPlayer.py -a $names < serverlist/compList"
