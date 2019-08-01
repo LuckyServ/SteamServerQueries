@@ -1,13 +1,15 @@
 # Steam Game Server Queries
 
-This python script requests information from steam game servers. So far, this
-has only been tested on competitive L4D2 servers.
+This Python script is a command line tool that reads a list of IP:PORT Steam 
+servers from `stdin` and outputs information about the servers in a pretty format.
 
-This python script takes a list of IP:PORT steam servers from stdin and
-outputs information about the server (A2S_INFO and A2S_PLAYER).
+Read more about **A2S_INFO** and **A2S_PLAYER** at [Valve's Server queries wiki]
+(https://developer.valvesoftware.com/wiki/Server_queries).
 
-To get started, just clone the repository. Since the script reads from stdin,
-just redirect your list of IP:PORT like so:
+To get started, just clone the repository. A list of [Left 4 Dead 2]
+(https://store.steampowered.com/app/550/Left_4_Dead_2/) servers is provided
+in the [serverList](https://github.com/LuckyServ/SteamServerQueries/tree/master/serverlist)
+directory. Since the script reads from stdin, just redirect your list of IP:PORT like so:
 
 ```bash
  $ ./a2sInfoPlayer.py < serverlist/compList 
@@ -20,8 +22,21 @@ SirPlease NY #2 | Zone :X: Skeet           192.223.24.99:27016     32 ms  c2m2_f
 [...]
 ```
 
-There are many command line options available, here's the help page:
+The server list file must respect the IP:PORT format, for example:
 
+```
+192.223.24.99:27015
+192.223.24.99:27016
+192.223.24.99:27017
+192.223.24.99:27018
+192.223.24.99:27019
+192.223.24.99:27020
+```
+
+Any line that doesn't match what an IP:PORT should look like is ignored.  
+    
+There are many command line options available, here's the help page:
+  
 ```bash
  $ ./a2sInfoPlayer.py -h
 usage: a2sInfoPlayer.py [-h] [-a] [-e] [-v] [-s] [-n NAME] [-p PLAYER]
@@ -66,3 +81,6 @@ optional arguments:
   --sortreverse         reverse sort
   --printestimate       prints an estimate of how long the script will run
 ```
+
+Finally, the [bash](https://github.com/LuckyServ/SteamServerQueries/tree/master/bash)
+directory contains quick one liner bash commands that I use frequently.
