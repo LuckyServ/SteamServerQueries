@@ -13,7 +13,7 @@ To get started, just clone the repository. A list of [Left 4 Dead 2](https://sto
 
 Since the script reads from stdin, just redirect your list of IP:PORT like so:
 
-```bash
+```
  $ ./a2sInfoPlayer.py < serverlist/compList 
 SirPlease NY #1 | Zonemod v1.9.4           192.223.24.99:27015     25 ms  c5m1_waterfront            10
 SirPlease NY #3                            192.223.24.99:27017     26 ms  c2m1_highway                0
@@ -41,7 +41,7 @@ Any line that doesn't match what an IP:PORT should look like is ignored.
 
 There are many command line options available, here's the help page:
   
-```bash
+```
  $ ./a2sInfoPlayer.py -h
 usage: a2sInfoPlayer.py [-h] [-a] [-e] [-v] [-s] [-n NAME] [-p PLAYER]
                         [-m MINPLAYER] [-x MAXPLAYER] [-t TIMEOUT] [-r RETRY]
