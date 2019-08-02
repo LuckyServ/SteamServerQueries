@@ -180,8 +180,6 @@ class ValveA2SInfo:
                         + "(ulimit -n). Current threadcount value is {}."
                         .format(maxThreadCount), file=sys.stderr
                     )
-                elif "timed out" not in str(e) and "service not know" not in str(e):
-                    print("{} : {}".format(str(e), self.strServerIpPort), file=sys.stderr)
                 self.connect = False
                 sock.close()
 
@@ -247,7 +245,7 @@ class ValveA2SInfo:
                 + str(self.numPlayers).rjust(3)
             )
 
-            if showPlayers: s += "\n"
+            if showPlayers or isVerbose: s += "\n"
 
             if isVerbose:
                 s += (
