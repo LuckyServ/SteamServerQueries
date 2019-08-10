@@ -239,7 +239,7 @@ class ValveA2SInfo:
         if self.connect:
             s = (
                 self.strServerName.ljust(maxNameLength)
-                + self.strServerIpPort.ljust(23)
+                + ("steam://connect/" + self.strServerIpPort).ljust(23 + 16)
                 + (str(int(self.ping)).rjust(3) + " ms").ljust(8)
                 + self.strMapName.ljust(maxMapLength)
                 + str(self.numPlayers).rjust(3)
