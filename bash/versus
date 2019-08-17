@@ -1,7 +1,1 @@
-#!/bin/bash
-#
-# Script to get versus vanilla servers to join.
-# 
-# Author: Luckylock
-
-./a2sInfoPlayer.py < serverlist/masterServersListLowPing -m 5 -x 7 -n valve -t 80
+watch -n 8 "./a2sInfoPlayer.py < serverlist/compList --active --sort name --showplayers -m 5 -r 2 -x 7" 
