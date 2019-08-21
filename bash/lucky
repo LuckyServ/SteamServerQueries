@@ -1,0 +1,1 @@
+watch -n 8 "./a2sInfoPlayer.py < serverlist/luckyserv" -s
