@@ -28,7 +28,7 @@ import argparse
 import re
 
 # Maximum number of threads alive at once
-MAX_THREAD_COUNT = 32
+MAX_THREAD_COUNT = 200
 
 # Error number for too many files (when too many threads are alive at once)
 TOO_MANY_OPEN_FILES = 24
